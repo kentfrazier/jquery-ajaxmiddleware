@@ -25,7 +25,7 @@ jQuery(function($) {
 
 * Install Node.js and make sure its scripts are on your path
 * git clone this repository
-* cd to the directory
+* `cd` to the directory
 * run `npm install`, then `bower install`
 * run `grunt` to test and build
 
