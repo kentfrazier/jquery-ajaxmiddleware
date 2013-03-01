@@ -33,9 +33,20 @@
 	 * of middleware objects registered to that key.
 	 *
 	 * @private
-	 * @type {Object.<String, Array.<ajaxTransportMiddleware>>}
+	 * @type {Object.<String, ajaxTransportMiddleware[]>}
 	 */
-	var registry = {};
+	var registry = {
+		ids: {},
+		names: {},
+		add: $.proxy(function(middleware) {
+			var id = middleware._id;
+			var name = middleware.options.name;
+
+			this.ids[id] = middleware;
+			this.names[name] = this.names[name] || [];
+			this.names[name].push(middleware);
+		}, registry)
+	};
 
 	/**
 	 * Generate a unique key for each middleware object.
@@ -158,14 +169,38 @@
 	}
 
 	/**
+	 * The real constructor for ajaxTransportMiddleware.
+	 *
+	 * @constructor
+	 * @private
+	 * @param {Object} options
+	 *     see the module JSDoc for detail on what can be passed in.
+	 */
+	function Middleware(options) {
+		this.options = $.extend(
+			true,
+			{},
+			ajaxTransportMiddleware.DEFAULT_OPTIONS,
+			options
+		);
+		this._id = generateID();
+		this.activate();
+	}
+
+
+	/**
 	 * Handles the business of installing the middleware.
 	 *
 	 * @private
 	 * @returns {void}
 	 */
 	function installMiddleware(middleware) {
+		/* Install this middleware in the registry so we can track it
+		 */
+		registry.add(middleware);
+
 		/* First we need to install a prefilter in order to give the
-		 * transport handler a place to hook in.
+		 * transport handler a place to hook in
 		 */
 		$.ajaxPrefilter(
 			middleware.dataTypes,
@@ -188,7 +223,7 @@
 	 * @param {Object} options
 	 */
 	function ajaxTransportMiddleware(options) {
-		return new ajaxTransportMiddleware.prototype._Constructor(options);
+		return new Middleware(options);
 	}
 
 	ajaxTransportMiddleware.prototype = {
@@ -198,41 +233,37 @@
 		 * ------------------------------------------------------------------ */
 
 		/**
-		 * Uninstall this middleware class.
-		 *
-		 * @returns {boolean} whether the middleware was successfully
-		 *     uninstalled.
+		 * Activate this middleware class.
 		 */
-		uninstall: function() {},
-
-		/* ------------------------------------------------------------------ *
-		 *                          INTERNALS
-		 * ------------------------------------------------------------------ */
+		activate: function() {
+			this._active = true;
+			if (!(this._id in registry.ids)) {
+				installMiddleware(this);
+			}
+		},
 
 		/**
-		 * The real constructor for ajaxTransportMiddleware.
-		 *
-		 * @constructor
-		 * @private
-		 * @param {Object} options
-		 *     see the module JSDoc for detail on what can be passed in.
+		 * Deactivate this middleware class.
 		 */
-		_Constructor: function(options) {
-			this.options = $.extend(
-				true,
-				{},
-				ajaxTransportMiddleware.DEFAULT_OPTIONS,
-				options
-			);
-			this._id = generateID();
-			this._active = true;
-			this.uninstall = $.proxy(
-				function() {
-					this._active = false;
-				},
-				this
-			);
-			installMiddleware(this);
+		deactivate: function() {
+			this._active = false;
+		},
+
+		/**
+		 * @returns {boolean} whether the middleware is currently active
+		 */
+		isActive: function() {
+			return this._active;
+		},
+
+		toString: function() {
+			return [
+				'<ajaxTransportMiddleware: ',
+				this.options.name,
+				', ',
+				this._id,
+				'>'
+			].join('');
 		}
 
 	};
@@ -246,37 +277,25 @@
 			dataTypes: '*',
 
 			filter: function() {
-				/*jshint unused:false */
 				return true;
-			},
-
-			beforeSend: null,
-			completeWrapper: null,
-			afterSend: null,
-
-			beforeAbort: null,
-			afterAbort: null
+			}
 		},
 
 		/**
-		 * Uninstall one or more middleware components.
-		 *
-		 * @param {(ajaxTransportMiddleware|Array|String)} middleware
+		 * @param {String} name
+		 *     the name of the middleware type in question.
+		 * @param {boolean} [includeDisabled=false]
+		 *     whether or not to include disabled middleware in results
+		 * @returns {ajaxTransportMiddleware[]}
+		 *     an array of all middleware registered using that name. If
+		 *     opt_includeDisabled is true, it will include the disabled
+		 *     middleware as well.
 		 */
-		uninstallMiddleware: function uninstall(middleware) {
-			if (middleware instanceof ajaxTransportMiddleware) {
-				middleware.uninstall();
-			} else if (middleware instanceof String) {
-				var names = $.trim(middleware).split(/\s+/g);
-				$.each(names, function(ix, name) {
-					var mwArray = registry[name] || [];
-					ajaxTransportMiddleware.uninstallMiddleware(mwArray);
-				});
-			} else if ($.isArray(middleware)) {
-				$.each(middleware, function(ix, mw) {
-					ajaxTransportMiddleware.uninstallMiddleware(mw);
-				});
-			}
+		getByName: function(name, includeDisabled) {
+			var results = registry.names[name] || [];
+			return $.grep(results, function(middleware) {
+				return includeDisabled || middleware._active;
+			});
 		}
 	});
 
@@ -284,8 +303,7 @@
 	/* make sure that middleware objects are identified as such, whether
 	 * created with new or not.
 	 */
-	ajaxTransportMiddleware.prototype._Constructor.prototype =
-			ajaxTransportMiddleware.prototype;
+	Middleware.prototype = ajaxTransportMiddleware.prototype;
 
 	/* Install for normal jQuery */
 	$.ajaxTransportMiddleware = ajaxTransportMiddleware;
