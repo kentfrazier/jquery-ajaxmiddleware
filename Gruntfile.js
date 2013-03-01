@@ -7,6 +7,15 @@ module.exports = function(grunt) {
 		/* --- Package Metadata --- */
 		pkg: grunt.file.readJSON('package.json'),
 		banner: grunt.file.read('banner.template'),
+		files: {
+			test: {
+				js: 'test/**.js',
+				html: 'test/**.html'
+			},
+			src: {
+				js: 'src/**.js'
+			}
+		},
 
 		/* --- Task Configuration --- */
 		clean: {
@@ -32,20 +41,25 @@ module.exports = function(grunt) {
 			}
 		},
 		qunit: {
-			files: ['test/**/*.html']
+			files: '<%= files.test.html %>'
 		},
 		jshint: {
 			options: {
 				jshintrc: '.jshintrc'
 			},
+			dev: {
+				options: {
+					jshintrc: null
+				}
+			},
 			gruntfile: {
 				src: 'Gruntfile.js'
 			},
 			src: {
-				src: ['src/**/*.js']
+				src: '<%= files.src.js %>'
 			},
 			test: {
-				src: ['test/**/*.js']
+				src: '<%= files.test.js %>'
 			}
 		},
 		watch: {
@@ -54,12 +68,33 @@ module.exports = function(grunt) {
 				tasks: ['jshint:gruntfile']
 			},
 			src: {
-				files: '<%= jshint.src.src %>',
+				files: '<%= files.src.js %>',
 				tasks: ['jshint:src', 'qunit']
 			},
 			test: {
-				files: '<%= jshint.test.src %>',
+				files: '<%= files.test.js %>',
 				tasks: ['jshint:test', 'qunit']
+			},
+			browsertest: {
+				files: ['<%= files.src.js %>', '<%= files.test.js %>'],
+				tasks: ['jshint:src', 'jshint:test', 'reload:browsertest']
+			}
+		},
+		connect: {
+			browsertest: {
+				options: {
+					port: 9005,
+					hostname: 'localhost'
+				}
+			}
+		},
+		reload: {
+			browsertest: {
+				port: 9006,
+				proxy: {
+					host: 'localhost',
+					port: 9005
+				}
 			}
 		}
 	});
@@ -67,14 +102,24 @@ module.exports = function(grunt) {
 	/* --- Load Plugin Tasks --- */
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-contrib-connect');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-qunit');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-reload');
 
 	/* --- Define Tasks --- */
 	grunt.registerTask(
-		'default',
+		'test',
+		['jshint', 'qunit']
+	);
+	grunt.registerTask(
+		'browsertest',
+		['connect:browsertest', 'reload:browsertest', 'watch:browsertest']
+	);
+	grunt.registerTask(
+		'build',
 		['jshint', 'qunit', 'clean', 'concat', 'uglify']
 	);
 
