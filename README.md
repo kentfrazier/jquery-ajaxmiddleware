@@ -23,7 +23,8 @@ jQuery(function($) {
 
 ## Development
 
-* Install Node.js and make sure its scripts are on your path
+* Install Node.js and npm and make sure they are on your path
+* run `npm install -g grunt-cli bower`
 * git clone this repository
 * `cd` to the directory
 * run `npm install`, then `bower install`
