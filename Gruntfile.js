@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 
 		/* --- Package Metadata --- */
 		pkg: grunt.file.readJSON('package.json'),
-		banner: grunt.file.read('banner.template'),
+		banner: grunt.file.read('resources/templates/banner.template'),
 		files: {
 			test: {
 				js: 'test/**.js',
