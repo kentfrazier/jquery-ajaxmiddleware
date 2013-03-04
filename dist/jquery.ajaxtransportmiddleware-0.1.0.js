@@ -1,5 +1,5 @@
 /*!
- * jQuery AJAX Transport Middleware - v0.1.0 - 2013-02-28
+ * jQuery AJAX Transport Middleware - v0.1.0 - 2013-03-04
  * https://github.com/kentfrazier/jquery-ajaxtransportmiddleware
  * Copyright (c) 2013 Kent Frazier; Licensed MIT
  */
@@ -292,10 +292,21 @@
 		 *     middleware as well.
 		 */
 		getByName: function(name, includeDisabled) {
-			var results = registry.names[name] || [];
-			return $.grep(results, function(middleware) {
-				return includeDisabled || middleware._active;
-			});
+			var results = [];
+			if (name === '*') {
+				for (var mwName in registry.names) {
+					if (registry.names.hasOwnProperty(mwName)) {
+						$.merge(results,
+								this.getByName(mwName, includeDisabled));
+					}
+				}
+			} else {
+				$.merge(results, registry.names[name] || []);
+				results = $.grep(results, function(middleware) {
+					return includeDisabled || middleware._active;
+				});
+			}
+			return results;
 		}
 	});
 

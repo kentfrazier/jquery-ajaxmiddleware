@@ -294,10 +294,21 @@
 		 *     middleware as well.
 		 */
 		getByName: function(name, includeDisabled) {
-			var results = registry.names[name] || [];
-			return $.grep(results, function(middleware) {
-				return includeDisabled || middleware._active;
-			});
+			var results = [];
+			if (name === '*') {
+				for (var mwName in registry.names) {
+					if (registry.names.hasOwnProperty(mwName)) {
+						$.merge(results,
+								this.getByName(mwName, includeDisabled));
+					}
+				}
+			} else {
+				$.merge(results, registry.names[name] || []);
+				results = $.grep(results, function(middleware) {
+					return includeDisabled || middleware._active;
+				});
+			}
+			return results;
 		}
 	});
 

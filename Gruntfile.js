@@ -44,18 +44,16 @@ module.exports = function(grunt) {
 			files: '<%= files.test.html %>'
 		},
 		jshint: {
-			options: {
-				jshintrc: '.jshintrc'
-			},
-			dev: {
-				options: {
-					jshintrc: null
-				}
-			},
 			gruntfile: {
+				options: {
+					jshintrc: '.jshintrc'
+				},
 				src: 'Gruntfile.js'
 			},
 			src: {
+				options: {
+					jshintrc: '.jshintrc'
+				},
 				src: '<%= files.src.js %>'
 			},
 			test: {
@@ -119,7 +117,7 @@ module.exports = function(grunt) {
 		['connect:browsertest', 'reload:browsertest', 'watch:browsertest']
 	);
 	grunt.registerTask(
-		'build',
+		'default',
 		['jshint', 'qunit', 'clean', 'concat', 'uglify']
 	);
 
