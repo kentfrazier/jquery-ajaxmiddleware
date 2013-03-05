@@ -39,8 +39,8 @@
 		ids: {},
 		names: {},
 		add: $.proxy(function(middleware) {
-			var id = middleware._id;
-			var name = middleware.options.name;
+			var id = middleware.id;
+			var name = middleware.name;
 
 			this.ids[id] = middleware;
 			this.names[name] = this.names[name] || [];
@@ -65,21 +65,21 @@
 
 	function createPrefilter(middleware) {
 		return function(options, originalOptions, jqXHR) {
-			if (!middleware._active) {
+			if (!middleware.isActive()) {
 				return;
 			}
 
 			/* Ensure that options has a namespace for this module. */
 			$.extend(true, options, {_ajaxTransportMiddleware: {}});
 
-			if (options._ajaxTransportMiddleware[middleware._id]) {
+			if (options._ajaxTransportMiddleware[middleware.id]) {
 				return;
 			}
 
 			/* Now we need to mark the options so we know this middleware has
 			 * processed it.
 			 */
-			options._ajaxTransportMiddleware[middleware._id] = true;
+			options._ajaxTransportMiddleware[middleware.id] = true;
 
 			if (middleware.options.filter(options, originalOptions, jqXHR)) {
 				/* Returning a string from here will cause the AJAX handlers to
@@ -87,7 +87,7 @@
 				 * the ajaxTransport handler we install below can have higher
 				 * precedence than the defaults.
 				 */
-				return middleware.options.name;
+				return middleware.dataType;
 			}
 		};
 	}
@@ -100,10 +100,15 @@
 			var request;
 
 			function send(headers, completeCallback) {
-
-				headers = middleware.options.modifyHeaders(headers);
+				headers = middleware.options.modifyRequestHeaders(
+					headers,
+					options,
+					originalOptions
+				);
 				completeCallback = middleware.options.modifyCompleteCallback(
-					completeCallback
+					completeCallback,
+					options,
+					originalOptions
 				);
 
 				var overrides = {
@@ -123,11 +128,10 @@
 					/* Pass along any request headers that were specified */
 					headers: headers,
 
-					//TODO: how does this call the original success and
-					//error handlers? Does that happen in completeCallback?
-					statusCode: undefined,
-					success: undefined,
-					error: undefined,
+					/* Prevent any of the original handlers from running */
+					statusCode: null,
+					success: null,
+					error: null,
 					complete: function(jqXHR, textStatus) {
 						completeCallback(
 							jqXHR.status,
@@ -138,14 +142,17 @@
 					}
 				};
 
+				/* Have to get rid of the fake dataType we added */
+				options.dataTypes.shift();
+
 				var overriddenOptions = $.extend(
 					true,
 					{},
-					originalOptions, //TODO: should this be options?
+					options,
 					overrides
 				);
 
-				request = jQuery.ajax(overriddenOptions);
+				request = $.ajax(overriddenOptions);
 			}
 
 			function abort() {
@@ -183,7 +190,17 @@
 			ajaxTransportMiddleware.DEFAULT_OPTIONS,
 			options
 		);
-		this._id = generateID();
+		this.name = this.options.name || null;
+		this.id = generateID();
+
+		/* For some reason, jQuery lower cases all dataTypes on ajaxPrefilters,
+		 * but later does not do the same when checking ajaxTransports.
+		 * To make it work, we need to be consistent with that and always use
+		 * lower case. We will fall back to the ID if a name is not provided,
+		 * since we have to have a dataType.
+		 */
+		this.dataType = (this.name || this.id).toLowerCase();
+
 		this.activate();
 	}
 
@@ -203,7 +220,7 @@
 		 * transport handler a place to hook in
 		 */
 		$.ajaxPrefilter(
-			middleware.dataTypes,
+			middleware.options.dataTypes,
 			createPrefilter(middleware)
 		);
 
@@ -211,7 +228,7 @@
 		 * our hooks
 		 */
 		$.ajaxTransport(
-			middleware.options.name,
+			middleware.dataType,
 			createTransport(middleware)
 		);
 	}
@@ -237,7 +254,7 @@
 		 */
 		activate: function() {
 			this._active = true;
-			if (!(this._id in registry.ids)) {
+			if (!(this.id in registry.ids)) {
 				installMiddleware(this);
 			}
 		},
@@ -259,9 +276,9 @@
 		toString: function() {
 			return [
 				'<ajaxTransportMiddleware: ',
-				this.options.name,
+				this.dataType,
 				', ',
-				this._id,
+				this.id,
 				'>'
 			].join('');
 		}
@@ -278,32 +295,40 @@
 
 			filter: function() {
 				return true;
+			},
+
+			modifyRequestHeaders: function(headers) {
+				return headers;
+			},
+
+			modifyCompleteCallback: function(completeCallback) {
+				return completeCallback;
 			}
 		},
 
 		/**
 		 * @param {String} name
 		 *     the name of the middleware type in question.
-		 * @param {boolean} [includeDisabled=false]
+		 * @param {boolean} [includeDeactivated=false]
 		 *     whether or not to include disabled middleware in results
 		 * @returns {ajaxTransportMiddleware[]}
 		 *     an array of all middleware registered using that name. If
-		 *     opt_includeDisabled is true, it will include the disabled
+		 *     includeDeactivated is true, it will include the deactivated
 		 *     middleware as well.
 		 */
-		getByName: function(name, includeDisabled) {
+		getByName: function(name, includeDeactivated) {
 			var results = [];
 			if (name === '*') {
 				for (var mwName in registry.names) {
 					if (registry.names.hasOwnProperty(mwName)) {
 						$.merge(results,
-								this.getByName(mwName, includeDisabled));
+								this.getByName(mwName, includeDeactivated));
 					}
 				}
 			} else {
 				$.merge(results, registry.names[name] || []);
 				results = $.grep(results, function(middleware) {
-					return includeDisabled || middleware._active;
+					return includeDeactivated || middleware._active;
 				});
 			}
 			return results;
