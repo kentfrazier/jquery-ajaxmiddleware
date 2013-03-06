@@ -29,7 +29,7 @@ ok: false, equal: false, strictEqual: false, notStrictEqual: false
  *     throws(block, [expected], [message])
  */
 
-require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
+define(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
 
     'use strict';
 
@@ -530,6 +530,5 @@ require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
     });
 
     // TODO: hook into jQuery's AJAX test suite to make sure it all still works
-    QUnit.start();
 
 });

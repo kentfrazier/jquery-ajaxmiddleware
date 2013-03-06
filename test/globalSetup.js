@@ -1,15 +1,8 @@
 /*global
 window: false,
-QUnit: false,
 require: true,
 REQUIRE_CONFIG: true, JQUERY_URL: true
 */
-
-(function(QUnit) {
-    'use strict';
-
-    QUnit.config.autostart = false;
-}(QUnit));
 
 var JQUERY_URL = (function(defaultVersion) {
     'use strict';
