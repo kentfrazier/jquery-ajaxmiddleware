@@ -102,12 +102,7 @@
             var request;
 
             function send(headers, completeCallback) {
-                headers = middleware.options.modifyRequestHeaders(
-                    headers,
-                    options,
-                    originalOptions
-                );
-                completeCallback = middleware.options.modifyCompleteCallback(
+                completeCallback = middleware.options.completeCallbackWrapper(
                     completeCallback,
                     options,
                     originalOptions
@@ -299,20 +294,17 @@
                 return true;
             },
 
-            modifyRequestHeaders: function(headers) {
-                return headers;
-            },
-
-            modifyCompleteCallback: function(completeCallback) {
+            completeCallbackWrapper: function(completeCallback) {
                 return completeCallback;
             }
         },
 
         /**
          * @param {String} name
-         *     the name of the middleware type in question.
+         *     the name of the middleware type in question, or '*' to return
+         *     all registered middleware.
          * @param {boolean} [includeDeactivated=false]
-         *     whether or not to include disabled middleware in results
+         *     whether or not to include deactivated middleware in results
          * @returns {ajaxTransportMiddleware[]}
          *     an array of all middleware registered using that name. If
          *     includeDeactivated is true, it will include the deactivated
