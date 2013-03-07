@@ -16,6 +16,19 @@ module.exports = function(grunt) {
                 js: 'src/**.js'
             }
         },
+        env: {
+            browsertest: {
+                host: '<%= process.env.' +
+                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_HOST' +
+                    ' || "localhost" %>',
+                port: '<%= process.env.' +
+                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_PORT' +
+                    ' || 9005 %>',
+                reloadPort: '<%= process.env.' +
+                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_RELOADPORT' +
+                    ' || 9006 %>'
+            }
+        },
 
         /* --- Task Configuration --- */
         clean: {
@@ -74,24 +87,28 @@ module.exports = function(grunt) {
                 tasks: ['jshint:test', 'qunit']
             },
             browsertest: {
-                files: ['<%= files.src.js %>', '<%= files.test.js %>'],
+                files: [
+                    '<%= files.src.js %>',
+                    '<%= files.test.js %>',
+                    '<%= files.test.html %>'
+                ],
                 tasks: ['jshint:src', 'jshint:test', 'reload:browsertest']
             }
         },
         connect: {
             browsertest: {
                 options: {
-                    port: 9005,
-                    hostname: 'localhost'
+                    port: '<%= env.browsertest.port %>',
+                    hostname: '<%= env.browsertest.host %>'
                 }
             }
         },
         reload: {
             browsertest: {
-                port: 9006,
+                port: '<%= env.browsertest.reloadPort %>',
                 proxy: {
-                    host: 'localhost',
-                    port: 9005
+                    port: '<%= connect.browsertest.options.port %>',
+                    hostname: '<%= connect.browsertest.options.hostname %>'
                 }
             }
         }
