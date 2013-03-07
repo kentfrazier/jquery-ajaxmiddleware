@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+/*jshint node: true */
+
+var npm = require('npm');
+
+npm.load(function (err) {
+    if (err) {
+        throw err;
+    }
+
+    npm.commands['run-script'](['grunt precommit'], function (err) {
+        if (err) {
+            console.error('Precommit hook failed!');
+            console.error(err);
+            process.exit(1);
+        } else {
+            console.info('Precommit hook ran successfully.');
+        }
+    });
+});

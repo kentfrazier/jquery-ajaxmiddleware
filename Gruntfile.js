@@ -71,6 +71,9 @@ module.exports = function(grunt) {
             },
             test: {
                 src: '<%= files.test.js %>'
+            },
+            gitHooks: {
+                src: 'git_hooks/**'
             }
         },
         watch: {
@@ -136,6 +139,10 @@ module.exports = function(grunt) {
     grunt.registerTask(
         'default',
         ['jshint', 'qunit', 'clean', 'concat', 'uglify']
+    );
+    grunt.registerTask(
+        'precommit',
+        ['jshint', 'qunit']
     );
 
 };

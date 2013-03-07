@@ -28,6 +28,7 @@ jQuery(function($) {
 * git clone this repository
 * `cd` to the directory
 * run `npm install`, then `bower install`
+* run `node git\_hooks/link.js` to install git hooks
 * run `grunt` to test and build
 
 ## Documentation
