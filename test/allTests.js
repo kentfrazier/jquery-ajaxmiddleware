@@ -435,7 +435,7 @@ require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
         return $.extend({}, _buildAjaxOptions.DEFAULTS, options);
     }
     _buildAjaxOptions.DEFAULTS = {
-        url: '',
+        url: '../resources/ajaxTarget.html',
         success: _expectCalled('success'),
         error: _expectNotCalled('error'),
         complete: function() {
