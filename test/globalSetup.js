@@ -22,7 +22,6 @@ require = REQUIRE_CONFIG = (function() {
 
     return {
         baseUrl: '../',
-        urlArgs: 'bust=' + (new Date()).getTime(),
         paths: {
             jquery: /^(.*)\.js$/.exec(JQUERY_URL)[1],
             ajaxtransportmiddleware: 'src/ajaxtransportmiddleware'

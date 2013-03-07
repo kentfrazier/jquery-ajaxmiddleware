@@ -58,7 +58,7 @@
      * @returns {String} a new unique key
      */
     var generateID = (function(seed) {
-        return function() {
+        return function generateID() {
             var id = '' + seed;
             ++seed;
             return id;
@@ -180,16 +180,15 @@
             ajaxTransportMiddleware.DEFAULT_OPTIONS,
             options
         );
-        this.name = this.options.name || null;
+        this.name = this.options.name;
         this.id = generateID();
 
         /* For some reason, jQuery lower cases all dataTypes on ajaxPrefilters,
          * but later does not do the same when checking ajaxTransports.
          * To make it work, we need to be consistent with that and always use
-         * lower case. We will fall back to the ID if a name is not provided,
-         * since we have to have a dataType.
+         * lower case.
          */
-        this.dataType = (this.name || this.id).toLowerCase();
+        this.dataType = (this.name + this.id).toLowerCase();
 
         this.activate();
     }

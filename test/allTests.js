@@ -529,7 +529,58 @@ require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
         });
     });
 
+    asyncTest('ensure middleware nests properly (LIFO order)', 2, function() {
+        this.$.ajaxTransportMiddleware({
+            completeCallbackWrapper: function(completeCallback) {
+                return function(status, statusText, responses, headers) {
+                    var text = responses.text;
+                    return completeCallback(
+                        status,
+                        statusText,
+                        {text: text + ' Bang bang, shoot shoot!'},
+                        headers
+                    );
+                };
+            }
+        });
+        this.$.ajaxTransportMiddleware({
+            completeCallbackWrapper: function(completeCallback) {
+                return function(status, statusText, responses, headers) {
+                    var text = responses.text;
+                    return completeCallback(
+                        status,
+                        statusText,
+                        {text: text + ' is a warm gun.'},
+                        headers
+                    );
+                };
+            }
+        });
+        this.$.ajaxTransportMiddleware({
+            completeCallbackWrapper: function(completeCallback) {
+                return function(status, statusText, responses, headers) {
+                    return completeCallback(
+                        status,
+                        statusText,
+                        {text: 'Happiness'},
+                        headers
+                    );
+                };
+            }
+        });
+
+        this.$.ajax(_buildAjaxOptions({
+            success: function(data) {
+                equal(data, 'Happiness is a warm gun. Bang bang, shoot shoot!',
+                      'Middleware executed in last-in, first-out order.');
+            }
+        }));
+
+    });
+
     // TODO: hook into jQuery's AJAX test suite to make sure it all still works
+
+    /* Now we can start up QUnit, since the tests are all loaded. */
     QUnit.start();
 
 });
