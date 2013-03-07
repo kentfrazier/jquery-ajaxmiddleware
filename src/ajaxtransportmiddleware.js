@@ -39,16 +39,16 @@
      */
     var registry = {
         ids: {},
-        names: {},
-        add: $.proxy(function(middleware) {
-            var id = middleware.id;
-            var name = middleware.name;
-
-            this.ids[id] = middleware;
-            this.names[name] = this.names[name] || [];
-            this.names[name].push(middleware);
-        }, registry)
+        names: {}
     };
+    registry.add = $.proxy(function(middleware) {
+        var id = middleware.id;
+        var name = middleware.name;
+
+        this.ids[id] = middleware;
+        this.names[name] = this.names[name] || [];
+        this.names[name].push(middleware);
+    }, registry);
 
     /**
      * Generate a unique key for each middleware object.
@@ -158,13 +158,6 @@
                 }
             }
 
-            // Is this necessary?
-            //if ( options.intercepted ) {
-            //    return {
-            //        send: send,
-            //        abort: abort
-            //    };
-            //}
             return {
                 send: send,
                 abort: abort
@@ -287,7 +280,7 @@
      * ---------------------------------------------------------------------- */
     $.extend(ajaxTransportMiddleware, {
         DEFAULT_OPTIONS: {
-            name: null,
+            name: 'ajaxTransportMiddleware',
             dataTypes: '*',
 
             filter: function() {
