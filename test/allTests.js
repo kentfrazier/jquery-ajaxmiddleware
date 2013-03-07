@@ -29,7 +29,7 @@ ok: false, equal: false, strictEqual: false, notStrictEqual: false
  *     throws(block, [expected], [message])
  */
 
-define(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
+require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
 
     'use strict';
 
@@ -117,12 +117,12 @@ define(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
     /* ====================================================================== */
     module('ajaxTransportMiddleware.installation.require', {
         setup: function() {
-            this.jQuery = window.$;
+            this.global$ = window.$;
             require.undef('jquery');
             require.undef('ajaxtransportmiddleware');
         },
         teardown: function() {
-            while (window.$ && window.$ !== this.jQuery) {
+            while (window.$ && window.$ !== this.global$) {
                 window.$.noConflict(true);
             }
         }
@@ -530,5 +530,6 @@ define(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
     });
 
     // TODO: hook into jQuery's AJAX test suite to make sure it all still works
+    QUnit.start();
 
 });

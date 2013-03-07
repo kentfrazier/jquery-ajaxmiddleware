@@ -1,5 +1,6 @@
 /*global
 window: false,
+QUnit: false,
 require: true,
 REQUIRE_CONFIG: true, JQUERY_URL: true
 */
@@ -21,10 +22,9 @@ require = REQUIRE_CONFIG = (function() {
 
     return {
         baseUrl: '../',
+        urlArgs: 'bust=' + (new Date()).getTime(),
         paths: {
-            /*jshint regexp: false */
             jquery: /^(.*)\.js$/.exec(JQUERY_URL)[1],
-            /*jshint regexp: true */
             ajaxtransportmiddleware: 'src/ajaxtransportmiddleware'
         },
         shim: {
@@ -37,3 +37,5 @@ require = REQUIRE_CONFIG = (function() {
         }
     };
 }());
+
+QUnit.config.autostart = false;
