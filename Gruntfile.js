@@ -18,8 +18,8 @@ module.exports = function(grunt) {
         },
         env: {
             browsertest: {
-                host: '<%= process.env.' +
-                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_HOST' +
+                hostname: '<%= process.env.' +
+                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_HOSTNAME' +
                     ' || "localhost" %>',
                 port: '<%= process.env.' +
                     'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_PORT' +
@@ -99,7 +99,7 @@ module.exports = function(grunt) {
             browsertest: {
                 options: {
                     port: '<%= env.browsertest.port %>',
-                    hostname: '<%= env.browsertest.host %>'
+                    hostname: '<%= env.browsertest.hostname %>'
                 }
             }
         },
