@@ -14,7 +14,8 @@ module.exports = function(grunt) {
             },
             src: {
                 js: 'src/**.js'
-            }
+            },
+            gitHooks: 'git_hooks/*'
         },
         env: {
             browsertest: {
@@ -73,7 +74,7 @@ module.exports = function(grunt) {
                 src: '<%= files.test.js %>'
             },
             gitHooks: {
-                src: 'git_hooks/**'
+                src: '<%= files.gitHooks %>'
             }
         },
         watch: {
