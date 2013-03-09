@@ -135,7 +135,7 @@ require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
         var testCase = this;
         require(['jquery'], function(jq) {
             ok($.isFunction(jq), 'jQuery imported via require');
-            notStrictEqual(jq, testCase.jQuery, 'jQuery is fresh copy');
+            notStrictEqual(jq, testCase.global$, 'jQuery is fresh copy');
             ok(!jq.hasOwnProperty('ajaxTransportMiddleware'),
                'middleware plugin not yet installed');
             require(['ajaxtransportmiddleware'], function(plugin) {
