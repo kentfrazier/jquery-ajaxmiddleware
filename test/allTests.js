@@ -64,7 +64,7 @@ require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
     }
 
     var jqURL = '../' + JQUERY_URL;
-    var pluginURL = '../src/ajaxtransportmiddleware.js';
+    var pluginURL = '../src/jquery-ajaxtransportmiddleware.js';
 
     $.ajax(jqURL, {
         async: false,

@@ -1,5 +1,5 @@
 /*
- * ajaxtransportmiddleware
+ * jquery-ajaxtransportmiddleware
  * https://github.com/kentfrazier/jquery-ajaxtransportmiddleware
  *
  * Copyright (c) 2013 Kent Frazier

@@ -24,7 +24,7 @@ require = REQUIRE_CONFIG = (function() {
         baseUrl: '../',
         paths: {
             jquery: /^(.*)\.js$/.exec(JQUERY_URL)[1],
-            ajaxtransportmiddleware: 'src/ajaxtransportmiddleware'
+            ajaxtransportmiddleware: 'src/jquery-ajaxtransportmiddleware'
         },
         shim: {
             jquery: {
