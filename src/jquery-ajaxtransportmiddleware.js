@@ -39,16 +39,16 @@
      */
     var registry = {
         ids: {},
-        names: {}
-    };
-    registry.add = $.proxy(function(middleware) {
-        var id = middleware.id;
-        var name = middleware.name;
+        names: {},
+        add: function(middleware) {
+            var id = middleware.id;
+            var name = middleware.name;
 
-        this.ids[id] = middleware;
-        this.names[name] = this.names[name] || [];
-        this.names[name].push(middleware);
-    }, registry);
+            this.ids[id] = middleware;
+            this.names[name] = this.names[name] || [];
+            this.names[name].push(middleware);
+        }
+    };
 
     /**
      * Generate a unique key for each middleware object.
