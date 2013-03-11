@@ -1,7 +1,7 @@
 /*globals
 window: false,
 JQUERY_URL: false,
-define: false, require: false, REQUIRE_CONFIG: false,
+define: false, require: false,
 QUnit: false,
 module: false, test: false, asyncTest: false, start: false, stop: false,
 ok: false, equal: false, strictEqual: false, notStrictEqual: false

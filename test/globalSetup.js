@@ -2,7 +2,7 @@
 window: false,
 QUnit: false,
 require: true,
-REQUIRE_CONFIG: true, JQUERY_URL: true
+JQUERY_URL: true
 */
 
 var JQUERY_URL = (function(defaultVersion) {
@@ -14,10 +14,7 @@ var JQUERY_URL = (function(defaultVersion) {
     return 'libs/jquery/jquery-' + version + '.js';
 }('1.9.1'));
 
-var requirejs,
-    REQUIRE_CONFIG;
-
-require = REQUIRE_CONFIG = (function() {
+var require = (function() {
     'use strict';
 
     return {
