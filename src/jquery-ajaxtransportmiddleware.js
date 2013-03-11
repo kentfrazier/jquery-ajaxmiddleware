@@ -232,7 +232,13 @@
         return new Middleware(options);
     }
 
-    ajaxTransportMiddleware.prototype = {
+    /* ajaxTransportMiddleware is the public face of the internal Middleware
+     * object, and they need to evaluate to the same type (or instances of
+     * either should pass the instanceof test with the other). Setting their
+     * prototypes to the same object will ensure that this happens, as defined
+     * by ECMA-262 sections 11.8.6 and 15.3.5.3.
+     */
+    ajaxTransportMiddleware.prototype = Middleware.prototype = {
 
         /* ------------------------------------------------------------------ *
          *                          PUBLIC API
@@ -320,12 +326,6 @@
             return results;
         }
     });
-
-
-    /* make sure that middleware objects are identified as such, whether
-     * created with new or not.
-     */
-    Middleware.prototype = ajaxTransportMiddleware.prototype;
 
     /* Install for normal jQuery */
     $.ajaxTransportMiddleware = ajaxTransportMiddleware;
