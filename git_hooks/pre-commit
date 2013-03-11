@@ -10,7 +10,7 @@ npm.load(function (err) {
         throw err;
     }
 
-    npm.commands['run-script'](['grunt precommit'], function (err) {
+    npm.commands['run-script'](['test'], function (err) {
         if (err) {
             console.error('Precommit hook failed!');
             console.error(err);

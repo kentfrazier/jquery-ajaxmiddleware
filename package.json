@@ -25,7 +25,7 @@
   },
   "scripts": {
     "build": "grunt",
-    "test": "grunt qunit"
+    "test": "grunt test"
   },
   "dependencies": {
     "jquery": ">= 1.5.x"

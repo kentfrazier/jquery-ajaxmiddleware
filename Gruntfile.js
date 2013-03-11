@@ -141,9 +141,4 @@ module.exports = function(grunt) {
         'default',
         ['jshint', 'qunit', 'clean', 'concat', 'uglify']
     );
-    grunt.registerTask(
-        'precommit',
-        ['jshint', 'qunit']
-    );
-
 };
