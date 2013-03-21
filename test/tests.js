@@ -28,9 +28,19 @@ ok: false, equal: false, strictEqual: false, notStrictEqual: false
  */
 
 define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
-        function(JQUERY_URL, $, plugin, undefined) {
+        function(JQUERY_URL, jQuery, plugin, undefined) {
 
     'use strict';
+
+    // --- Imported jQuery Utilities --- //
+    var isFunction = jQuery.isFunction;
+    var globalEval = jQuery.globalEval;
+    var extend = jQuery.extend;
+    var each = jQuery.each;
+
+    // $ should only be used for the current sandboxed jQuery, and should
+    // be set to null in each teardown.
+    var $ = null;
 
     /**
      * A utility function to provide a clean copy of jQuery with the plugin
@@ -49,8 +59,8 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
         window.define = undefined;
 
         // Load jQuery and the plugin as normal
-        $.globalEval(jQuerySandbox.jqSrc);
-        $.globalEval(jQuerySandbox.pluginSrc);
+        globalEval(jQuerySandbox.jqSrc);
+        globalEval(jQuerySandbox.pluginSrc);
         var sandbox$ = window.$;
 
         // And now we need to restore the global state
@@ -65,14 +75,14 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     var jqURL = '../' + JQUERY_URL;
     var pluginURL = '../src/jquery-ajaxtransportmiddleware.js';
 
-    $.ajax(jqURL, {
+    jQuery.ajax(jqURL, {
         async: false,
         dataType: 'text',
         success: function(data) {
             jQuerySandbox.jqSrc = data;
         }
     });
-    $.ajax(pluginURL, {
+    jQuery.ajax(pluginURL, {
         async: false,
         dataType: 'text',
         success: function(data) {
@@ -99,17 +109,17 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     });
 
     test('installable in normal way', 6, function() {
-        ok(!$.isFunction(window.require), 'require unavailable');
-        ok(!$.isFunction(window.define), 'define unavailable');
+        ok(!isFunction(window.require), 'require unavailable');
+        ok(!isFunction(window.define), 'define unavailable');
 
-        $.globalEval(jQuerySandbox.jqSrc);
-        ok($.isFunction(window.$), 'jQuery installed.');
+        globalEval(jQuerySandbox.jqSrc);
+        ok(isFunction(window.$), 'jQuery installed.');
         notStrictEqual(window.$, this.global$, 'jQuery is fresh copy');
         ok(!window.$.hasOwnProperty('ajaxTransportMiddleware'),
            'middleware plugin not yet installed');
 
-        $.globalEval(jQuerySandbox.pluginSrc);
-        ok($.isFunction(window.$.ajaxTransportMiddleware),
+        globalEval(jQuerySandbox.pluginSrc);
+        ok(isFunction(window.$.ajaxTransportMiddleware),
            'middleware plugin is installed');
     });
 
@@ -128,17 +138,17 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     });
 
     asyncTest('installable through require.js', 6, function() {
-        ok($.isFunction(require), 'require available');
-        ok($.isFunction(define) && define.amd, 'define available');
+        ok(isFunction(require), 'require available');
+        ok(isFunction(define) && define.amd, 'define available');
 
         var testCase = this;
-        require(['jquery'], function(jq) {
-            ok($.isFunction(jq), 'jQuery imported via require');
-            notStrictEqual(jq, testCase.global$, 'jQuery is fresh copy');
-            ok(!jq.hasOwnProperty('ajaxTransportMiddleware'),
+        require(['jquery'], function($) {
+            ok(isFunction($), 'jQuery imported via require');
+            notStrictEqual($, testCase.global$, 'jQuery is fresh copy');
+            ok(!$.hasOwnProperty('ajaxTransportMiddleware'),
                'middleware plugin not yet installed');
             require(['ajaxtransportmiddleware'], function(plugin) {
-                strictEqual(jq.ajaxTransportMiddleware, plugin,
+                strictEqual($.ajaxTransportMiddleware, plugin,
                             'middleware plugin is installed');
                 start();
             });
@@ -146,10 +156,17 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     });
 
     /* ====================================================================== */
-    module('ajaxTransportMiddleware.constructor');
+    module('ajaxTransportMiddleware.constructor', {
+        setup: function() {
+            $ = jQuerySandbox();
+        },
+        teardown: function() {
+            $ = null;
+        }
+    });
 
     test('is installed and callable', 1, function() {
-        ok($.isFunction($.ajaxTransportMiddleware),
+        ok(isFunction($.ajaxTransportMiddleware),
            'exists and is callable');
     });
 
@@ -169,21 +186,25 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     /* ====================================================================== */
     module('ajaxTransportMiddleware.instanceMethods', {
         setup: function() {
+            $ = jQuerySandbox();
             this.middleware = $.ajaxTransportMiddleware();
+        },
+        teardown: function() {
+            $ = null;
         }
     });
 
     test('has activate method', 1, function() {
-        ok($.isFunction(this.middleware.activate), 'exists and is a function');
+        ok(isFunction(this.middleware.activate), 'exists and is a function');
     });
 
     test('has deactivate method', 1, function() {
-        ok($.isFunction(this.middleware.deactivate),
+        ok(isFunction(this.middleware.deactivate),
            'exists and is a function');
     });
 
     test('has isActive method', 1, function() {
-        ok($.isFunction(this.middleware.isActive), 'exists and is a function');
+        ok(isFunction(this.middleware.isActive), 'exists and is a function');
     });
 
     test('isActive defaults to true', 1, function() {
@@ -208,7 +229,6 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     /* ====================================================================== */
     module('ajaxTransportMiddleware.getByName', {
         setup: function() {
-            this.orig$ = $;
             $ = jQuerySandbox();
             this.mw = {};
             this.mw.testMiddleware1 = [];
@@ -226,12 +246,12 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
             }
         },
         teardown: function() {
-            $ = this.orig$;
+            $ = null;
         }
     });
 
     test('has getByName method', 1, function() {
-        ok($.isFunction($.ajaxTransportMiddleware.getByName),
+        ok(isFunction($.ajaxTransportMiddleware.getByName),
            'exists and is a function');
     });
 
@@ -262,11 +282,11 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
         this.mw.testMiddleware1[3].deactivate();
         var mw = $.ajaxTransportMiddleware.getByName('testMiddleware1');
         equal(mw.length, 3, 'correct number returned');
-        $.each([1, 2, 4], $.proxy(function(_, ix) {
+        each([1, 2, 4], $.proxy(function(_, ix) {
             ok($.inArray(this.mw.testMiddleware1[ix], mw) >= 0,
                this.mw.testMiddleware1[ix].toString() + ' in array');
         }, this));
-        $.each([0, 3], $.proxy(function(_, ix) {
+        each([0, 3], $.proxy(function(_, ix) {
             equal($.inArray(this.mw.testMiddleware1[ix], mw), -1,
                   this.mw.testMiddleware1[ix].toString() + ' not in array');
         }, this));
@@ -278,11 +298,11 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
         var mw = $.ajaxTransportMiddleware.getByName('testMiddleware1',
                                                           false);
         equal(mw.length, 3, 'correct number returned');
-        $.each([1, 2, 4], $.proxy(function(_, ix) {
+        each([1, 2, 4], $.proxy(function(_, ix) {
             ok($.inArray(this.mw.testMiddleware1[ix], mw) >= 0,
                this.mw.testMiddleware1[ix].toString() + ' in array');
         }, this));
-        $.each([0, 3], $.proxy(function(_, ix) {
+        each([0, 3], $.proxy(function(_, ix) {
             equal($.inArray(this.mw.testMiddleware1[ix], mw), -1,
                   this.mw.testMiddleware1[ix].toString() + ' not in array');
         }, this));
@@ -294,7 +314,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
         var mw = $.ajaxTransportMiddleware.getByName('testMiddleware1',
                                                           true);
         equal(mw.length, 5, 'correct number returned');
-        $.each(this.mw.testMiddleware1, $.proxy(function(_, middleware) {
+        each(this.mw.testMiddleware1, $.proxy(function(_, middleware) {
             ok($.inArray(middleware, mw) >= 0,
                middleware.toString() + ' in array');
         }, this));
@@ -325,7 +345,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
             ['testMiddleware2', 3, true],
             ['testMiddleware2', 4, false]
         ];
-        $.each(tuples, function(__, tuple) {
+        each(tuples, function(__, tuple) {
             var name = tuple[0];
             var index = tuple[1];
             var active = tuple[2];
@@ -342,7 +362,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
 
         equal(mw.length, 5, 'correct number returned');
 
-        $.each(tuples, $.proxy(function(_, tuple) {
+        each(tuples, $.proxy(function(_, tuple) {
             var name = tuple[0],
                 index = tuple[1],
                 active = tuple[2];
@@ -362,7 +382,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
 
         equal(mw.length, 5, 'correct number returned');
 
-        $.each(tuples, $.proxy(function(_, tuple) {
+        each(tuples, $.proxy(function(_, tuple) {
             var name = tuple[0],
                 index = tuple[1],
                 active = tuple[2];
@@ -382,7 +402,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
 
         equal(mw.length, 10, 'correct number returned');
 
-        $.each(this.mw.all, $.proxy(function(_, middleware) {
+        each(this.mw.all, $.proxy(function(_, middleware) {
             ok($.inArray(middleware, mw) >= 0,
                middleware.toString() + ' in array');
         }, this));
@@ -391,7 +411,10 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     /* ====================================================================== */
     module('ajaxTransportMiddleware.modifyCallbacks', {
         setup: function() {
-            this.$ = jQuerySandbox();
+            $ = jQuerySandbox();
+        },
+        teardown: function() {
+            $ = null;
         }
     });
 
@@ -416,7 +439,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     function _expectNotCalled(name) {
         return function() {
             var args = ['['];
-            $.each(arguments, function(_, arg) {
+            each(arguments, function(_, arg) {
                 args.push('' + arg);
                 args.push(', ');
             });
@@ -431,7 +454,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     }
 
     function _buildAjaxOptions(options) {
-        return $.extend({}, _buildAjaxOptions.DEFAULTS, options);
+        return extend({}, _buildAjaxOptions.DEFAULTS, options);
     }
     _buildAjaxOptions.DEFAULTS = {
         url: '../resources/ajaxTarget.html',
@@ -449,13 +472,13 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     });
 
     asyncTest('default handlers do not prevent normal call', 2, function() {
-            this.$.ajaxTransportMiddleware();
+            $.ajaxTransportMiddleware();
             $.ajax(_buildAjaxOptions());
         }
     );
 
     asyncTest('modify callbacks get called', 4, function() {
-        this.$.ajaxTransportMiddleware({
+        $.ajaxTransportMiddleware({
             filter: function() {
                 ok(true, 'filter got called');
                 return true;
@@ -465,15 +488,15 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
                 return completeCallback;
             }
         });
-        this.$.ajax(_buildAjaxOptions());
+        $.ajax(_buildAjaxOptions());
     });
 
     asyncTest('completeCallbackWrapper can override statusCode', 6, function() {
-        this.$.ajaxTransportMiddleware({
+        $.ajaxTransportMiddleware({
             completeCallbackWrapper: _completeWrapper500
         });
 
-        this.$.ajax(_buildAjaxOptions({
+        $.ajax(_buildAjaxOptions({
             success: _expectNotCalled('success'),
             error: function(xhr, textStatus, errorThrown) {
                 _expectCalled('error').apply(this, arguments);
@@ -489,17 +512,17 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     });
 
     asyncTest('disabled middleware does not modify calls', 2, function() {
-        var middleware = this.$.ajaxTransportMiddleware({
+        var middleware = $.ajaxTransportMiddleware({
             completeCallbackWrapper: _completeWrapper500
         });
 
         middleware.deactivate();
 
-        this.$.ajax(_buildAjaxOptions());
+        $.ajax(_buildAjaxOptions());
     });
 
     asyncTest('filter selectively applies middleware', 5, function() {
-        this.$.ajaxTransportMiddleware({
+        $.ajaxTransportMiddleware({
             filter: function(options) {
                 return (/handle=true/).test(options.data);
             },
@@ -507,13 +530,13 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
         });
 
         // We need to wait until both calls are done to trigger start()
-        this.$.when([
+        $.when([
 
-            this.$.ajax(_buildAjaxOptions({
+            $.ajax(_buildAjaxOptions({
                 complete: _expectCalled('complete')
             })),
 
-            this.$.ajax(_buildAjaxOptions({
+            $.ajax(_buildAjaxOptions({
                 data: {handle: true},
                 success: _expectNotCalled('success'),
                 error: _expectCalled('error'),
@@ -529,7 +552,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
     });
 
     asyncTest('ensure middleware nests properly (LIFO order)', 2, function() {
-        this.$.ajaxTransportMiddleware({
+        $.ajaxTransportMiddleware({
             completeCallbackWrapper: function(completeCallback) {
                 return function(status, statusText, responses, headers) {
                     var text = responses.text;
@@ -542,7 +565,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
                 };
             }
         });
-        this.$.ajaxTransportMiddleware({
+        $.ajaxTransportMiddleware({
             completeCallbackWrapper: function(completeCallback) {
                 return function(status, statusText, responses, headers) {
                     var text = responses.text;
@@ -555,7 +578,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
                 };
             }
         });
-        this.$.ajaxTransportMiddleware({
+        $.ajaxTransportMiddleware({
             completeCallbackWrapper: function(completeCallback) {
                 return function(status, statusText, responses, headers) {
                     return completeCallback(
@@ -568,7 +591,7 @@ define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
             }
         });
 
-        this.$.ajax(_buildAjaxOptions({
+        $.ajax(_buildAjaxOptions({
             success: function(data) {
                 equal(data, 'Happiness is a warm gun. Bang bang, shoot shoot!',
                       'Middleware executed in last-in, first-out order.');
