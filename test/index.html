@@ -4,13 +4,56 @@
 <meta charset="utf-8">
 <title>jQuery AJAX Transport Middleware Test Suite</title>
 <link rel="stylesheet" href="../components/qunit/qunit.css" media="screen">
-<script type="text/javascript" src="../components/qunit/qunit.js"></script>
-<script type="text/javascript" src="setup.js"></script>
-<script type="text/javascript" data-main="test/tests"
-        src="../components/require/require.js"></script>
 </head>
 <body>
 <div id="qunit"></div>
 <div id="qunit-fixture"></div>
+
+<script type="text/javascript" src="../components/qunit/qunit.js"></script>
+<script type="text/javascript" src="../libs/requirejs/require.js"></script>
+
+<script type="text/javascript">
+(function() {
+    /*global
+    window: false,
+    require: true, define: true
+    */
+    'use strict';
+
+    var JQUERY_URL = (function(defaultVersion) {
+        'use strict';
+
+        var params = window.location.search;
+        var match = params.match(/[?&]jquery=([^\?&]*)/);
+        var version = match && match[1] || defaultVersion;
+        return 'libs/jquery/jquery-' + version + '.js';
+    }('1.9.1'));
+
+    define('jquery-url', [], function() {
+        return JQUERY_URL;
+    });
+
+    require.config({
+        baseUrl: '../',
+        paths: {
+            jquery: /^(.*)\.js$/.exec(JQUERY_URL)[1],
+            ajaxtransportmiddleware: 'src/jquery-ajaxtransportmiddleware'
+        },
+        shim: {
+            jquery: {
+                exports: '$',
+                init: function() {
+                    return window.$.noConflict(true);
+                }
+            }
+        }
+    });
+
+    QUnit.config.autostart = false;
+    require(['test/tests'], function() {
+        QUnit.start();
+    });
+}());
+</script>
 </body>
 </html>

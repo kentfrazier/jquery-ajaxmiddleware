@@ -1,8 +1,6 @@
 /*globals
 window: false,
-JQUERY_URL: false,
 define: false, require: false,
-QUnit: false,
 module: false, test: false, asyncTest: false, start: false, stop: false,
 ok: false, equal: false, strictEqual: false, notStrictEqual: false
 */
@@ -29,7 +27,8 @@ ok: false, equal: false, strictEqual: false, notStrictEqual: false
  *     throws(block, [expected], [message])
  */
 
-require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
+define(['jquery-url', 'jquery', 'ajaxtransportmiddleware'],
+        function(JQUERY_URL, $, plugin, undefined) {
 
     'use strict';
 
@@ -580,7 +579,5 @@ require(['jquery', 'ajaxtransportmiddleware'], function($, plugin, undefined) {
 
     // TODO: hook into jQuery's AJAX test suite to make sure it all still works
 
-    /* Now we can start up QUnit, since the tests are all loaded. */
-    QUnit.start();
-
+    // No return intentionally. This is defined only for its side effects.
 });

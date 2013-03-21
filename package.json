@@ -27,9 +27,6 @@
     "build": "grunt",
     "test": "grunt test"
   },
-  "dependencies": {
-    "jquery": ">= 1.5.x"
-  },
   "devDependencies": {
     "grunt": "0.4.x",
     "grunt-contrib-clean": "0.4.x",
