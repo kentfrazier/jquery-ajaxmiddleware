@@ -1,25 +1,10 @@
-# jQuery AJAX Transport Middleware
+# jQuery AJAX Middleware
 
 A jQuery plugin that provides hooks to modify default ajaxTransport options
 without having to reimplement them.
 
 ## Getting Started
-Download the [production version][min] or the [development version][max].
-
-[min]: https://raw.github.com/kentfrazier/jquery-ajaxtransportmiddleware/master/dist/ajaxtransportmiddleware.min.js
-[max]: https://raw.github.com/kentfrazier/jquery-ajaxtransportmiddleware/master/dist/ajaxtransportmiddleware.js
-
-In your web page:
-
-```html
-<script src="jquery.js"></script>
-<script src="dist/ajaxtransportmiddleware.min.js"></script>
-<script>
-jQuery(function($) {
-    $.awesome(); // "awesome"
-    });
-</script>
-```
+_(Coming soon)_
 
 ## Development
 
@@ -28,7 +13,7 @@ jQuery(function($) {
 * git clone this repository
 * `cd` to the directory
 * run `npm install`, then `bower install`
-* run `node git\_hooks/link.js` to install git hooks
+* run `node git_hooks/link.js` to install git hooks
 * run `grunt` to test and build
 
 ## Documentation

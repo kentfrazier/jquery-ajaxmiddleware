@@ -1,6 +1,6 @@
 /*
- * jquery-ajaxtransportmiddleware
- * https://github.com/kentfrazier/jquery-ajaxtransportmiddleware
+ * jquery-ajaxmiddleware
+ * https://github.com/kentfrazier/jquery-ajaxmiddleware
  *
  * Copyright (c) 2013 Kent Frazier
  * Licensed under the MIT license.
@@ -35,7 +35,7 @@
      * of middleware objects registered to that key.
      *
      * @private
-     * @type {Object.<String, ajaxTransportMiddleware[]>}
+     * @type {Object.<String, ajaxMiddleware[]>}
      */
     var registry = {
         ids: {},
@@ -72,16 +72,16 @@
             }
 
             /* Ensure that options has a namespace for this module. */
-            $.extend(true, options, {_ajaxTransportMiddleware: {}});
+            $.extend(true, options, {_ajaxMiddleware: {}});
 
-            if (options._ajaxTransportMiddleware[middleware.id]) {
+            if (options._ajaxMiddleware[middleware.id]) {
                 return;
             }
 
             /* Now we need to mark the options so we know this middleware has
              * processed it.
              */
-            options._ajaxTransportMiddleware[middleware.id] = true;
+            options._ajaxMiddleware[middleware.id] = true;
 
             if (middleware.options.filter(options, originalOptions, jqXHR)) {
                 /* Returning a string from here will cause the AJAX handlers to
@@ -166,7 +166,7 @@
     }
 
     /**
-     * The real constructor for ajaxTransportMiddleware.
+     * The real constructor for ajaxMiddleware.
      *
      * @constructor
      * @private
@@ -177,7 +177,7 @@
         this.options = $.extend(
             true,
             {},
-            ajaxTransportMiddleware.DEFAULT_OPTIONS,
+            ajaxMiddleware.DEFAULT_OPTIONS,
             options
         );
         this.name = this.options.name;
@@ -228,17 +228,17 @@
      * @constructor
      * @param {Object} options
      */
-    function ajaxTransportMiddleware(options) {
+    function ajaxMiddleware(options) {
         return new Middleware(options);
     }
 
-    /* ajaxTransportMiddleware is the public face of the internal Middleware
+    /* ajaxMiddleware is the public face of the internal Middleware
      * object, and they need to evaluate to the same type (or instances of
      * either should pass the instanceof test with the other). Setting their
      * prototypes to the same object will ensure that this happens, as defined
      * by ECMA-262 sections 11.8.6 and 15.3.5.3.
      */
-    ajaxTransportMiddleware.prototype = Middleware.prototype = {
+    ajaxMiddleware.prototype = Middleware.prototype = {
 
         /* ------------------------------------------------------------------ *
          *                          PUBLIC API
@@ -270,7 +270,7 @@
 
         toString: function() {
             return [
-                '<ajaxTransportMiddleware: ',
+                '<ajaxMiddleware: ',
                 this.dataType,
                 ', ',
                 this.id,
@@ -283,9 +283,9 @@
     /* ---------------------------------------------------------------------- *
      *                          PUBLIC MEMBERS
      * ---------------------------------------------------------------------- */
-    $.extend(ajaxTransportMiddleware, {
+    $.extend(ajaxMiddleware, {
         DEFAULT_OPTIONS: {
-            name: 'ajaxTransportMiddleware',
+            name: 'ajaxMiddleware',
             dataTypes: '*',
 
             filter: function() {
@@ -303,7 +303,7 @@
          *     all registered middleware.
          * @param {boolean} [includeDeactivated=false]
          *     whether or not to include deactivated middleware in results
-         * @returns {ajaxTransportMiddleware[]}
+         * @returns {ajaxMiddleware[]}
          *     an array of all middleware registered using that name. If
          *     includeDeactivated is true, it will include the deactivated
          *     middleware as well.
@@ -328,9 +328,9 @@
     });
 
     /* Install for normal jQuery */
-    $.ajaxTransportMiddleware = ajaxTransportMiddleware;
+    $.ajaxMiddleware = ajaxMiddleware;
 
     /* Return for AMD */
-    return ajaxTransportMiddleware;
+    return ajaxMiddleware;
 },
 this));

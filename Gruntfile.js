@@ -20,13 +20,13 @@ module.exports = function(grunt) {
         env: {
             browsertest: {
                 hostname: '<%= process.env.' +
-                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_HOSTNAME' +
+                    'AJAXMIDDLEWARE_BROWSERTEST_HOSTNAME' +
                     ' || "localhost" %>',
                 port: '<%= process.env.' +
-                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_PORT' +
+                    'AJAXMIDDLEWARE_BROWSERTEST_PORT' +
                     ' || 9005 %>',
                 reloadPort: '<%= process.env.' +
-                    'AJAXTRANSPORTMIDDLEWARE_BROWSERTEST_RELOADPORT' +
+                    'AJAXMIDDLEWARE_BROWSERTEST_RELOADPORT' +
                     ' || 9006 %>'
             }
         },

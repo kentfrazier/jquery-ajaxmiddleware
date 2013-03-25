@@ -1,9 +1,9 @@
 {
-  "name": "jquery-ajaxtransportmiddleware",
-  "title": "jQuery AJAX Transport Middleware",
+  "name": "jquery-ajaxmiddleware",
+  "title": "jQuery AJAX Middleware",
   "description": "A jQuery plugin that provides hooks to modify default ajaxTransport options without having to reimplement them.",
-  "version": "0.1.0",
-  "homepage": "https://github.com/kentfrazier/jquery-ajaxtransportmiddleware",
+  "version": "0.2.0",
+  "homepage": "https://github.com/kentfrazier/jquery-ajaxmiddleware",
   "author": {
     "name": "Kent Frazier",
     "email": "kentfrazier@gmail.com",
@@ -11,13 +11,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/kentfrazier/jquery-ajaxtransportmiddleware.git"
+    "url": "git://github.com/kentfrazier/jquery-ajaxmiddleware.git"
   },
-  "bugs": "https://github.com/kentfrazier/jquery-ajaxtransportmiddleware/issues",
+  "bugs": "https://github.com/kentfrazier/jquery-ajaxmiddleware/issues",
   "licenses": [
     {
       "type": "MIT",
-      "url": "https://github.com/kentfrazier/jquery-ajaxtransportmiddleware/blob/master/LICENSE-MIT"
+      "url": "https://github.com/kentfrazier/jquery-ajaxmiddleware/blob/master/LICENSE-MIT"
     }
   ],
   "engines": {
