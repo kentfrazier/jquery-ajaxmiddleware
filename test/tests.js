@@ -419,15 +419,11 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
     });
 
     /* --- testing utility functions --- */
-    function _completeWrapper500(completeCallback) {
-        return function(status, statusText, responses, headers) {
-            return completeCallback(
-                500,
-                'Internal Server Error',
-                responses,
-                headers
-            );
-        };
+    function _beforeComplete500(completeParams) {
+        extend(completeParams, {
+            status: 500,
+            textStatus: 'Internal Server Error'
+        });
     }
 
     function _expectCalled(name) {
@@ -479,21 +475,20 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
 
     asyncTest('modify callbacks get called', 4, function() {
         $.ajaxMiddleware({
-            filter: function() {
-                ok(true, 'filter got called');
+            shouldIntercept: function() {
+                ok(true, 'shouldIntercept got called');
                 return true;
             },
-            completeCallbackWrapper: function(completeCallback) {
-                ok(true, 'completeCallbackWrapper got called');
-                return completeCallback;
+            beforeComplete: function() {
+                ok(true, 'beforeComplete got called');
             }
         });
         $.ajax(_buildAjaxOptions());
     });
 
-    asyncTest('completeCallbackWrapper can override statusCode', 6, function() {
+    asyncTest('beforeComplete can override statusCode', 6, function() {
         $.ajaxMiddleware({
-            completeCallbackWrapper: _completeWrapper500
+            beforeComplete: _beforeComplete500
         });
 
         $.ajax(_buildAjaxOptions({
@@ -513,7 +508,7 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
 
     asyncTest('disabled middleware does not modify calls', 2, function() {
         var middleware = $.ajaxMiddleware({
-            completeCallbackWrapper: _completeWrapper500
+            beforeComplete: _beforeComplete500
         });
 
         middleware.deactivate();
@@ -521,12 +516,12 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
         $.ajax(_buildAjaxOptions());
     });
 
-    asyncTest('filter selectively applies middleware', 5, function() {
+    asyncTest('shouldIntercept selectively applies middleware', 5, function() {
         $.ajaxMiddleware({
-            filter: function(options) {
+            shouldIntercept: function(options) {
                 return (/handle=true/).test(options.data);
             },
-            completeCallbackWrapper: _completeWrapper500
+            beforeComplete: _beforeComplete500
         });
 
         // We need to wait until both calls are done to trigger start()
@@ -553,41 +548,18 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
 
     asyncTest('ensure middleware nests properly (LIFO order)', 2, function() {
         $.ajaxMiddleware({
-            completeCallbackWrapper: function(completeCallback) {
-                return function(status, statusText, responses, headers) {
-                    var text = responses.text;
-                    return completeCallback(
-                        status,
-                        statusText,
-                        {text: text + ' Bang bang, shoot shoot!'},
-                        headers
-                    );
-                };
+            beforeComplete: function(completeParams) {
+                completeParams.responses.text += ' Bang bang, shoot shoot!';
             }
         });
         $.ajaxMiddleware({
-            completeCallbackWrapper: function(completeCallback) {
-                return function(status, statusText, responses, headers) {
-                    var text = responses.text;
-                    return completeCallback(
-                        status,
-                        statusText,
-                        {text: text + ' is a warm gun.'},
-                        headers
-                    );
-                };
+            beforeComplete: function(completeParams) {
+                completeParams.responses.text += ' is a warm gun.';
             }
         });
         $.ajaxMiddleware({
-            completeCallbackWrapper: function(completeCallback) {
-                return function(status, statusText, responses, headers) {
-                    return completeCallback(
-                        status,
-                        statusText,
-                        {text: 'Happiness'},
-                        headers
-                    );
-                };
+            beforeComplete: function(completeParams) {
+                completeParams.responses.text = 'Happiness';
             }
         });
 

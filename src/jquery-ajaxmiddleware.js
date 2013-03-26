@@ -83,7 +83,9 @@
              */
             options._ajaxMiddleware[middleware.id] = true;
 
-            if (middleware.options.filter(options, originalOptions, jqXHR)) {
+            if (middleware.options.shouldIntercept(options,
+                                                   originalOptions,
+                                                   jqXHR)) {
                 /* Returning a string from here will cause the AJAX handlers to
                  * treat it as a different dataType.  This is necessary so that
                  * the ajaxTransport handler we install below can have higher
@@ -102,39 +104,60 @@
             var request;
 
             function send(headers, completeCallback) {
-                completeCallback = middleware.options.completeCallbackWrapper(
-                    completeCallback,
-                    options,
-                    originalOptions
-                );
-
                 var overrides = {
                     /* Convert everything to text. The original request
                      * will handle all the necessary conversion.
                      */
+                    // TODO: This will break anything that doesn't use the
+                    // default transport! I need to figure out how to avoid
+                    // breaking things like script and jsonp!
                     dataType: 'text',
                     converters: {
                         '* text': window.String
                     },
 
                     /* Don't want AJAX events to go off for the inner call.
-                     * That will happen later.
+                     * That will happen when completeCallback is called.
                      */
                     global: false,
 
                     /* Pass along any request headers that were specified */
                     headers: headers,
 
-                    /* Prevent any of the original handlers from running */
+                    /* Prevent any of the original success or error handlers
+                     * from running
+                     */
                     statusCode: null,
                     success: null,
                     error: null,
+
+                    /* Completion of the underlying request will trigger our
+                     * postprocessing and then call the original handlers
+                     * specified by the user.
+                     */
                     complete: function(jqXHR, textStatus) {
+                        var completeParams = {
+                            status: jqXHR.status,
+                            textStatus: textStatus,
+                            responses: {text: jqXHR.responseText},
+                            headers: jqXHR.getAllResponseHeaders()
+                        };
+
+                        /* Now we give the middleware a chance to modify
+                         * the returned values before calling the original
+                         * completeCallback.
+                         */
+                        middleware.options.beforeComplete(
+                            completeParams,
+                            options,
+                            originalOptions
+                        );
+
                         completeCallback(
-                            jqXHR.status,
-                            textStatus,
-                            {text: jqXHR.responseText},
-                            jqXHR.getAllResponseHeaders()
+                            completeParams.status,
+                            completeParams.textStatus,
+                            completeParams.responses,
+                            completeParams.headers
                         );
                     }
                 };
@@ -268,6 +291,9 @@
             return this._active;
         },
 
+        /**
+         * @returns {String} a simple string representation
+         */
         toString: function() {
             return [
                 '<ajaxMiddleware: ',
@@ -284,16 +310,73 @@
      *                          PUBLIC MEMBERS
      * ---------------------------------------------------------------------- */
     $.extend(ajaxMiddleware, {
+        /**
+         * The default options for middleware. These values are all
+         * overrideable. See the documentation for individual attributes to
+         * understand what to pass in.
+         *
+         * @type {Object}
+         */
         DEFAULT_OPTIONS: {
+            /**
+             * The namespace used for this middleware object.
+             *
+             * @type {String}
+             */
             name: 'ajaxMiddleware',
+
+            /**
+             * The dataTypes to be handled.
+             *
+             * @type {String}
+             */
             dataTypes: '*',
 
-            filter: function() {
+            /**
+             * A predicate function to determine whether this middleware
+             * should process this request.
+             *
+             * @param {Object} options
+             *     The fully merged AJAX options for this request
+             * @param {Object} originalOptions
+             *     The original AJAX options specified by the user
+             * @param {jqXHR} jqXHR
+             *     The jQuery-wrapped XMLHttpResponse (or similar) object
+             *
+             * @returns {boolean} whether the request should be processed.
+             */
+            shouldIntercept: function() {
+                // Process all requests for the dataTypes by default.
                 return true;
             },
 
-            completeCallbackWrapper: function(completeCallback) {
-                return completeCallback;
+            /**
+             * Hook to modify the parameters to be sent to completeCallback.
+             *
+             * @param {Object} completeParams
+             *     Has four items, each corresponding to one of the arguments
+             *     to completeCallback as defined by jQuery. It uses the names
+             *     that jQuery gives them, but they are as follows:
+             *         status: the HTTP status code of the response
+             *         statusText: the text for the status (e.g. Internal
+             *             Server Error)
+             *         responses: (optional) is an object containing
+             *             dataType->value mappings that contains the response
+             *             in all the formats the transport could provide.
+             *         headers: (optional) is a string containing all the
+             *             response headers if the transport has access to
+             *             them.
+             * @param {Object} options
+             *     The AJAX options for the intercepted call.
+             * @param {Object} originalOptions
+             *     The original AJAX options for the intercepted call.
+             */
+            beforeComplete: function() {
+                /* Do nothing by default. */
+
+                /* If we modify completeParams here, it will affect the values
+                 * that are passed to the completeCallback.
+                 */
             }
         },
 
