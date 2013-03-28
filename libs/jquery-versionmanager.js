@@ -29,16 +29,11 @@ define(function() {
             var matches = window.location.search.match(
                 /[?&]jquery=[^\?&]+/g
             );
-            for (var match, i = 0; matches && i < matches.length; ++i) {
-                match = matches[i].split('=');
-                if (match[1] === 'all') {
-                    // if jquery=all is passed, we should test everything
-                    return ALL_VERSIONS;
-                }
-                versions.push(match[1]);
+            for (var i = 0; matches && i < matches.length; ++i) {
+                versions.push(matches[i].split('=')[1]);
             }
             if (!versions.length) {
-                versions.push(DEFAULT_VERSION);
+                return ALL_VERSIONS;
             }
             return versions.sort().reverse();
         },
