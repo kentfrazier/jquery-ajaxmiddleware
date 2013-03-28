@@ -56,6 +56,14 @@ define(function() {
                 paths: {
                     'jquery': this.requirePath(),
                     'jquery-source': this.url(),
+                },
+                shim: {
+                    jquery: {
+                        exports: '$',
+                        init: function() {
+                            return window.$.noConflict(true);
+                        }
+                    }
                 }
             });
         },

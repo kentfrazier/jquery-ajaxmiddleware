@@ -30,14 +30,6 @@
             'jquery-ajaxmiddleware-source': '/src/jquery-ajaxmiddleware.js',
             'jquery-versionmanager': '/libs/jquery-versionmanager',
             'tests': '/test/tests'
-        },
-        shim: {
-            jquery: {
-                exports: '$',
-                init: function() {
-                    return window.$.noConflict(true);
-                }
-            }
         }
     });
 
