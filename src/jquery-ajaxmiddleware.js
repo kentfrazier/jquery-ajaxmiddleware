@@ -83,9 +83,10 @@
              */
             options._ajaxMiddleware[middleware.id] = true;
 
-            if (middleware.options.shouldIntercept(options,
-                                                   originalOptions,
-                                                   jqXHR)) {
+            if (middleware.options.shouldIntercept.call(middleware,
+                                                        options,
+                                                        originalOptions,
+                                                        jqXHR)) {
                 /* Returning a string from here will cause the AJAX handlers to
                  * treat it as a different dataType.  This is necessary so that
                  * the ajaxTransport handler we install below can have higher
@@ -111,6 +112,7 @@
                     // TODO: This will break anything that doesn't use the
                     // default transport! I need to figure out how to avoid
                     // breaking things like script and jsonp!
+                    // TODO: Add some unit tests to demonstrate.
                     dataType: 'text',
                     converters: {
                         '* text': window.String
@@ -147,7 +149,8 @@
                          * the returned values before calling the original
                          * completeCallback.
                          */
-                        middleware.options.beforeComplete(
+                        middleware.options.beforeComplete.call(
+                            middleware,
                             completeParams,
                             options,
                             originalOptions

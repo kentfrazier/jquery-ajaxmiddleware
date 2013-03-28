@@ -493,6 +493,21 @@ define(
         $.ajax(_buildAjaxOptions());
     });
 
+    asyncTest('middleware is this in hook calls', 4, function() {
+        var middleware = $.ajaxMiddleware({
+            shouldIntercept: function() {
+                strictEqual(this, middleware,
+                            'middleware is this in shouldIntercept call');
+                return true;
+            },
+            beforeComplete: function() {
+                strictEqual(this, middleware,
+                            'middleware is this in beforeComplete call');
+            }
+        });
+        $.ajax(_buildAjaxOptions());
+    });
+
     asyncTest('beforeComplete can override statusCode', 6, function() {
         $.ajaxMiddleware({
             beforeComplete: _beforeComplete500
