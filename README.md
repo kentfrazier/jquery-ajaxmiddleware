@@ -13,7 +13,6 @@ _(Coming soon)_
 * git clone this repository
 * `cd` to the directory
 * run `npm install`, then `bower install`
-* run `node git_hooks/link.js` to install git hooks
 * run `grunt` to test and build
 
 ## Documentation

@@ -407,7 +407,9 @@
                 });
             }
             return results;
-        }
+        },
+
+        _jQuery: $
     });
 
     /* Install for normal jQuery */

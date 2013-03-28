@@ -73,7 +73,7 @@ define(function() {
         },
 
         requirePath: function() {
-            return '/libs/jquery/jquery-' + version;
+            return 'libs/jquery/jquery-' + version;
         }
 
     };

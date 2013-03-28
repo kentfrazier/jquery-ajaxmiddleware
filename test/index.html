@@ -24,12 +24,13 @@
     require.config({
         // Apparently have to set baseUrl to the location of the text plugin,
         // so I will just use full paths for the rest for now.
-        baseUrl: '/libs/requirejs/',
+        baseUrl: '/',
         paths: {
-            'jquery-ajaxmiddleware': '/src/jquery-ajaxmiddleware',
-            'jquery-ajaxmiddleware-source': '/src/jquery-ajaxmiddleware.js',
-            'jquery-versionmanager': '/libs/jquery-versionmanager',
-            'tests': '/test/tests'
+            'text': 'libs/requirejs/text',
+            'jquery-ajaxmiddleware': 'src/jquery-ajaxmiddleware',
+            'jquery-ajaxmiddleware-source': 'src/jquery-ajaxmiddleware.js',
+            'jquery-versionmanager': 'libs/jquery-versionmanager',
+            'tests': 'test/tests'
         }
     });
 

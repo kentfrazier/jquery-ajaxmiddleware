@@ -141,7 +141,7 @@ define(
         }
     });
 
-    test('installable in normal way', 6, function() {
+    test('installable in normal way', 7, function() {
         ok(!isFunction(window.require), 'require unavailable');
         ok(!isFunction(window.define), 'define unavailable');
 
@@ -154,6 +154,8 @@ define(
         globalEval(pluginSource);
         ok(isFunction(window.$.ajaxMiddleware),
            'middleware plugin is installed');
+        strictEqual(window.$.ajaxMiddleware._jQuery, window.$,
+                    'plugin has reference to correct jQuery');
     });
 
     /* ====================================================================== */
@@ -170,7 +172,7 @@ define(
         }
     });
 
-    asyncTest('installable through require.js', 6, function() {
+    asyncTest('installable through require.js', 7, function() {
         ok(isFunction(require), 'require available');
         ok(isFunction(define) && define.amd, 'define available');
 
@@ -183,6 +185,8 @@ define(
             require(['jquery-ajaxmiddleware'], function(plugin) {
                 strictEqual($.ajaxMiddleware, plugin,
                             'middleware plugin is installed');
+                strictEqual(plugin._jQuery, $,
+                            'plugin has reference to correct jQuery');
                 start();
             });
         });
@@ -219,7 +223,7 @@ define(
      */
     module(JQ_VERSION_PREFIX + 'jQuery sandbox');
 
-    test('sandbox provides isolated jQuery environment', 8, function() {
+    test('sandbox provides isolated jQuery environment', 9, function() {
         var global$ = window.$;
 
         strictEqual($, null, '$ is null before _createSandbox()');
@@ -231,6 +235,8 @@ define(
         notStrictEqual($, global$, '$ is not original window.$');
         strictEqual(global$, window.$, 'window.$ is still original value');
         ok($.isFunction($.ajaxMiddleware), 'ajaxMiddleware plugin installed');
+        strictEqual($.ajaxMiddleware._jQuery, $,
+                    'plugin has reference to correct jQuery');
 
         _destroySandbox();
         strictEqual($, null, '$ is null after _destroySandbox()');
