@@ -72,21 +72,36 @@
             }
 
             /* Ensure that options has a namespace for this module. */
-            $.extend(true, options, {_ajaxMiddleware: {}});
+            if (!options.hasOwnProperty('_ajaxMiddleware')) {
+                options._ajaxMiddleware = {
+                    /* The middleware currently processing. */
+                    current: null,
+                    /* Middleware that has completed processing */
+                    handled: {}
+                };
+            }
 
-            if (options._ajaxMiddleware[middleware.id]) {
+            
+            /* Escape if another middleware is currently processing */
+            if (options._ajaxMiddleware.current !== null) {
                 return;
             }
 
-            /* Now we need to mark the options so we know this middleware has
-             * processed it.
-             */
-            options._ajaxMiddleware[middleware.id] = true;
+            /* Escape if this middleware has already processed the request */
+            if (options._ajaxMiddleware.handled[middleware.dataType]) {
+                return;
+            }
 
             if (middleware.options.shouldIntercept.call(middleware,
                                                         options,
                                                         originalOptions,
                                                         jqXHR)) {
+
+                /* Now this middleware needs to mark its territory so nothing
+                 * else jumps in the way until its transport can handle things.
+                 */
+                options._ajaxMiddleware.current = middleware.dataType;
+
                 /* Returning a string from here will cause the AJAX handlers to
                  * treat it as a different dataType.  This is necessary so that
                  * the ajaxTransport handler we install below can have higher
@@ -99,6 +114,12 @@
 
     function createTransport(middleware) {
         return function(options, originalOptions) {
+            /* Mark the options so we know this middleware has finished. */
+            options._ajaxMiddleware.handled[middleware.dataType] = true;
+
+            /* Clear the flag that prevents other middleware from activating. */
+            options._ajaxMiddleware.current = null;
+
             /* Define this in the closure scope so that the send and abort
              * functions can both access it.
              */
