@@ -16,28 +16,20 @@
 (function() {
     /*global
     window: false,
-    require: true, define: true
+    require: false, define: false,
+    QUnit: false
     */
     'use strict';
 
-    var JQUERY_URL = (function(defaultVersion) {
-        'use strict';
-
-        var params = window.location.search;
-        var match = params.match(/[?&]jquery=([^\?&]*)/);
-        var version = match && match[1] || defaultVersion;
-        return 'libs/jquery/jquery-' + version + '.js';
-    }('1.9.1'));
-
-    define('jquery-url', [], function() {
-        return JQUERY_URL;
-    });
-
     require.config({
-        baseUrl: '../',
+        // Apparently have to set baseUrl to the location of the text plugin,
+        // so I will just use full paths for the rest for now.
+        baseUrl: '/libs/requirejs/',
         paths: {
-            jquery: /^(.*)\.js$/.exec(JQUERY_URL)[1],
-            ajaxmiddleware: 'src/jquery-ajaxmiddleware'
+            'jquery-ajaxmiddleware': '/src/jquery-ajaxmiddleware',
+            'jquery-ajaxmiddleware-source': '/src/jquery-ajaxmiddleware.js',
+            'jquery-versionmanager': '/libs/jquery-versionmanager',
+            'tests': '/test/tests'
         },
         shim: {
             jquery: {
@@ -50,8 +42,30 @@
     });
 
     QUnit.config.autostart = false;
-    require(['test/tests'], function() {
-        QUnit.start();
+
+    var stack = [
+        function() { QUnit.start(); }
+    ];
+
+    function next() {
+        return stack.pop();
+    }
+
+    require(['jquery-versionmanager'], function(versionManager) {
+        var requestedVersions = versionManager.requestedVersions();
+        for (var i = requestedVersions.length - 1; i > -1; --i) {
+            stack.push(
+                (function(version) {
+                    return function() {
+                        versionManager.setVersion(version);
+                        require.undef('tests');
+                        require(['tests'], next());
+                    };
+                }(requestedVersions[i]))
+            );
+        }
+        // Get this thing rolling!
+        next()();
     });
 }());
 </script>

@@ -27,71 +27,104 @@ ok: false, equal: false, strictEqual: false, notStrictEqual: false
  *     throws(block, [expected], [message])
  */
 
-define(['jquery-url', 'jquery', 'ajaxmiddleware'],
-        function(JQUERY_URL, jQuery, plugin, undefined) {
+define(
+    ['jquery-versionmanager',
+     'jquery',
+     'text!jquery-source',
+     'text!jquery-ajaxmiddleware-source'],
+    function(versionManager,
+             jQuery,
+             jQuerySource,
+             pluginSource,
+             undefined) {
 
     'use strict';
 
-    // --- Imported jQuery Utilities --- //
+    var JQ_VERSION = versionManager.version();
+    var JQ_VERSION_PREFIX = '[jquery-' + JQ_VERSION + '] ';
+
+    /* --- Imported jQuery Utilities --- */
     var isFunction = jQuery.isFunction;
     var globalEval = jQuery.globalEval;
     var extend = jQuery.extend;
     var each = jQuery.each;
 
+    /* --- testing utility functions --- */
+
     // $ should only be used for the current sandboxed jQuery, and should
     // be set to null in each teardown.
     var $ = null;
+    var _global$ = window.$;
 
-    /**
-     * A utility function to provide a clean copy of jQuery with the plugin
-     * installed that can be discarded for each test.
-     *
-     * @returns {jQuery} a fresh copy of jQuery with the ajaxMiddleware
-     *     plugin preinstalled and already unbound from the window using
-     *     noConflict.
-     */
-    function jQuerySandbox() {
-        // Save the global jQuery
-        var global$ = window.$;
+    function _createSandbox() {
+        var _require = window.require;
+        var _define = window.define;
 
-        // Need to make this load as if require were not installed
-        var globalDefine = window.define;
+        window.require = undefined;
         window.define = undefined;
 
-        // Load jQuery and the plugin as normal
-        globalEval(jQuerySandbox.jqSrc);
-        globalEval(jQuerySandbox.pluginSrc);
-        var sandbox$ = window.$;
+        globalEval(jQuerySource);
+        globalEval(pluginSource);
 
-        // And now we need to restore the global state
-        while (window.$ && window.$ !== global$) {
+        window.require = _require;
+        window.define = _define;
+
+        $ = window.$;
+        while (window.$ && window.$ !== _global$) {
             window.$.noConflict(true);
         }
-        window.define = globalDefine;
-
-        return sandbox$;
     }
 
-    var jqURL = '../' + JQUERY_URL;
-    var pluginURL = '../src/jquery-ajaxmiddleware.js';
+    function _destroySandbox() {
+        $ = null;
+    }
 
-    jQuery.ajax(jqURL, {
-        async: false,
-        dataType: 'text',
-        success: function(data) {
-            jQuerySandbox.jqSrc = data;
+    function _beforeComplete500(completeParams) {
+        extend(completeParams, {
+            status: 500,
+            textStatus: 'Internal Server Error'
+        });
+    }
+
+    function _expectCalled(name) {
+        return function() {
+            ok(true, name + ' called as expected.');
+        };
+    }
+
+    function _expectNotCalled(name) {
+        return function() {
+            var args = ['['];
+            each(arguments, function(_, arg) {
+                args.push('' + arg);
+                args.push(', ');
+            });
+            if (args.length > 1) {
+                args.pop();  // strip final comma
+            }
+            args.push(']');
+
+            ok(false,
+               name + ' called and should not have been. ' + args.join(''));
+        };
+    }
+
+    function _buildAjaxOptions(options) {
+        return extend({}, _buildAjaxOptions.DEFAULTS, options);
+    }
+    _buildAjaxOptions.DEFAULTS = {
+        url: '../resources/ajaxTarget.html',
+        success: _expectCalled('success'),
+        error: _expectNotCalled('error'),
+        complete: function() {
+            ok(true, 'Call completed');
+            start();
         }
-    });
-    jQuery.ajax(pluginURL, {
-        async: false,
-        dataType: 'text',
-        success: function(data) {
-            jQuerySandbox.pluginSrc = data;
-        }
-    });
+    };
+
 
     /* ====================================================================== */
-    module('ajaxMiddleware.installation.normal', {
+    module(JQ_VERSION_PREFIX + 'installation by normal means', {
         setup: function() {
             this.define = window.define;
             this.require = window.require;
@@ -112,23 +145,23 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
         ok(!isFunction(window.require), 'require unavailable');
         ok(!isFunction(window.define), 'define unavailable');
 
-        globalEval(jQuerySandbox.jqSrc);
+        globalEval(jQuerySource);
         ok(isFunction(window.$), 'jQuery installed.');
         notStrictEqual(window.$, this.global$, 'jQuery is fresh copy');
         ok(!window.$.hasOwnProperty('ajaxMiddleware'),
            'middleware plugin not yet installed');
 
-        globalEval(jQuerySandbox.pluginSrc);
+        globalEval(pluginSource);
         ok(isFunction(window.$.ajaxMiddleware),
            'middleware plugin is installed');
     });
 
     /* ====================================================================== */
-    module('ajaxMiddleware.installation.require', {
+    module(JQ_VERSION_PREFIX + 'installation with requirejs', {
         setup: function() {
             this.global$ = window.$;
             require.undef('jquery');
-            require.undef('ajaxmiddleware');
+            require.undef('jquery-ajaxmiddleware');
         },
         teardown: function() {
             while (window.$ && window.$ !== this.global$) {
@@ -147,7 +180,7 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
             notStrictEqual($, testCase.global$, 'jQuery is fresh copy');
             ok(!$.hasOwnProperty('ajaxMiddleware'),
                'middleware plugin not yet installed');
-            require(['ajaxmiddleware'], function(plugin) {
+            require(['jquery-ajaxmiddleware'], function(plugin) {
                 strictEqual($.ajaxMiddleware, plugin,
                             'middleware plugin is installed');
                 start();
@@ -156,13 +189,9 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
     });
 
     /* ====================================================================== */
-    module('ajaxMiddleware.constructor', {
-        setup: function() {
-            $ = jQuerySandbox();
-        },
-        teardown: function() {
-            $ = null;
-        }
+    module(JQ_VERSION_PREFIX + 'constructor', {
+        setup: _createSandbox,
+        teardown: _destroySandbox
     });
 
     test('is installed and callable', 1, function() {
@@ -184,14 +213,36 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
 
 
     /* ====================================================================== */
-    module('ajaxMiddleware.instanceMethods', {
+    /* This isn't really part of jquery-ajaxmiddleware, but we need to make
+     * sure it works properly in order to trust all the tests below that use
+     * it.
+     */
+    module(JQ_VERSION_PREFIX + 'jQuery sandbox');
+
+    test('sandbox provides isolated jQuery environment', 8, function() {
+        var global$ = window.$;
+
+        strictEqual($, null, '$ is null before _createSandbox()');
+
+        _createSandbox();
+        ok(isFunction($), '$ is a function after _createSandbox()');
+        ok('fn' in $ && 'jquery' in $.fn, '$ is jQuery');
+        equal($.fn.jquery, JQ_VERSION, '$ is jQuery ' + JQ_VERSION);
+        notStrictEqual($, global$, '$ is not original window.$');
+        strictEqual(global$, window.$, 'window.$ is still original value');
+        ok($.isFunction($.ajaxMiddleware), 'ajaxMiddleware plugin installed');
+
+        _destroySandbox();
+        strictEqual($, null, '$ is null after _destroySandbox()');
+    });
+
+    /* ====================================================================== */
+    module(JQ_VERSION_PREFIX + 'instance methods', {
         setup: function() {
-            $ = jQuerySandbox();
+            _createSandbox();
             this.middleware = $.ajaxMiddleware();
         },
-        teardown: function() {
-            $ = null;
-        }
+        teardown: _destroySandbox
     });
 
     test('has activate method', 1, function() {
@@ -227,9 +278,9 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
 
 
     /* ====================================================================== */
-    module('ajaxMiddleware.getByName', {
+    module(JQ_VERSION_PREFIX + 'getByName', {
         setup: function() {
-            $ = jQuerySandbox();
+            _createSandbox();
             this.mw = {};
             this.mw.testMiddleware1 = [];
             this.mw.testMiddleware2 = [];
@@ -245,9 +296,7 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
                 this.mw.all.push(mw2);
             }
         },
-        teardown: function() {
-            $ = null;
-        }
+        teardown: _destroySandbox
     });
 
     test('has getByName method', 1, function() {
@@ -409,58 +458,10 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
     });
 
     /* ====================================================================== */
-    module('ajaxMiddleware.modifyCallbacks', {
-        setup: function() {
-            $ = jQuerySandbox();
-        },
-        teardown: function() {
-            $ = null;
-        }
+    module(JQ_VERSION_PREFIX + 'options', {
+        setup: _createSandbox,
+        teardown: _destroySandbox
     });
-
-    /* --- testing utility functions --- */
-    function _beforeComplete500(completeParams) {
-        extend(completeParams, {
-            status: 500,
-            textStatus: 'Internal Server Error'
-        });
-    }
-
-    function _expectCalled(name) {
-        return function() {
-            ok(true, name + ' called as expected.');
-        };
-    }
-
-    function _expectNotCalled(name) {
-        return function() {
-            var args = ['['];
-            each(arguments, function(_, arg) {
-                args.push('' + arg);
-                args.push(', ');
-            });
-            if (args.length > 1) {
-                args.pop();  // strip final comma
-            }
-            args.push(']');
-
-            ok(false,
-               name + ' called and should not have been. ' + args.join(''));
-        };
-    }
-
-    function _buildAjaxOptions(options) {
-        return extend({}, _buildAjaxOptions.DEFAULTS, options);
-    }
-    _buildAjaxOptions.DEFAULTS = {
-        url: '../resources/ajaxTarget.html',
-        success: _expectCalled('success'),
-        error: _expectNotCalled('error'),
-        complete: function() {
-            ok(true, 'Call completed');
-            start();
-        }
-    };
 
     /* --- actual test cases --- */
     asyncTest('establish that base ajax call works', 2, function() {
@@ -473,7 +474,7 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
         }
     );
 
-    asyncTest('modify callbacks get called', 4, function() {
+    asyncTest('hooks get called', 4, function() {
         $.ajaxMiddleware({
             shouldIntercept: function() {
                 ok(true, 'shouldIntercept got called');
@@ -506,7 +507,7 @@ define(['jquery-url', 'jquery', 'ajaxmiddleware'],
         }));
     });
 
-    asyncTest('disabled middleware does not modify calls', 2, function() {
+    asyncTest('disabled middleware does not call hooks', 2, function() {
         var middleware = $.ajaxMiddleware({
             beforeComplete: _beforeComplete500
         });
