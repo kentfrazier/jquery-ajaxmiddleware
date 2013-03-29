@@ -45,6 +45,8 @@ define(
 
     /* --- Imported jQuery Utilities --- */
     var isFunction = jQuery.isFunction;
+    var isArray = jQuery.isArray;
+    var inArray = jQuery.inArray;
     var globalEval = jQuery.globalEval;
     var extend = jQuery.extend;
     var each = jQuery.each;
@@ -284,7 +286,7 @@ define(
 
 
     /* ====================================================================== */
-    module(JQ_VERSION_PREFIX + 'getByName', {
+    module(JQ_VERSION_PREFIX + 'getByNamespace', {
         setup: function() {
             _createSandbox();
             this.mw = {};
@@ -294,8 +296,8 @@ define(
 
             var mw1, mw2;
             for (var i = 0; i < 5; ++i) {
-                mw1 = $.ajaxMiddleware({name: 'testMiddleware1'});
-                mw2 = $.ajaxMiddleware({name: 'testMiddleware2'});
+                mw1 = $.ajaxMiddleware({namespace: 'testmiddleware1'});
+                mw2 = $.ajaxMiddleware({namespace: 'testmiddleware2'});
                 this.mw.testMiddleware1.push(mw1);
                 this.mw.testMiddleware2.push(mw2);
                 this.mw.all.push(mw1);
@@ -305,90 +307,90 @@ define(
         teardown: _destroySandbox
     });
 
-    test('has getByName method', 1, function() {
-        ok(isFunction($.ajaxMiddleware.getByName),
+    test('has getByNamespace method', 1, function() {
+        ok(isFunction($.ajaxMiddleware.getByNamespace),
            'exists and is a function');
     });
 
-    test('getByName returns array', 1, function() {
-        var mw = $.ajaxMiddleware.getByName('testMiddleware1');
-        ok($.isArray(mw), 'is an array');
+    test('getByNamespace returns array', 1, function() {
+        var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1');
+        ok(isArray(mwSet), 'is an array');
     });
 
-    test('getByName returns the correct number of objects', 1, function() {
-        var mw = $.ajaxMiddleware.getByName('testMiddleware1');
-        equal(mw.length, this.mw.testMiddleware1.length,
+    test('getByNamespace returns the correct number of objects', 1, function() {
+        var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1');
+        equal(mwSet.length, this.mw.testMiddleware1.length,
               'correct number returned');
     });
 
-    test('getByName returns the right objects', 6, function() {
-        var mw = $.ajaxMiddleware.getByName('testMiddleware1');
-        equal(mw.length, 5, 'correct number returned');
-        for (var i = 0; i < mw.length; ++i) {
+    test('getByNamespace returns the right objects', 6, function() {
+        var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1');
+        equal(mwSet.length, 5, 'correct number returned');
+        for (var i = 0; i < mwSet.length; ++i) {
             ok(
-                $.inArray(mw[i], this.mw.testMiddleware1) >= 0,
-                '' + mw[i] + ' in array.'
+                inArray(mwSet[i], this.mw.testMiddleware1) >= 0,
+                '' + mwSet[i] + ' in array.'
             );
         }
     });
 
-    test('getByName skips inactive by default', 6, function() {
+    test('getByNamespace skips inactive by default', 6, function() {
         this.mw.testMiddleware1[0].deactivate();
         this.mw.testMiddleware1[3].deactivate();
-        var mw = $.ajaxMiddleware.getByName('testMiddleware1');
-        equal(mw.length, 3, 'correct number returned');
+        var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1');
+        equal(mwSet.length, 3, 'correct number returned');
         each([1, 2, 4], $.proxy(function(_, ix) {
-            ok($.inArray(this.mw.testMiddleware1[ix], mw) >= 0,
+            ok(inArray(this.mw.testMiddleware1[ix], mwSet) >= 0,
                this.mw.testMiddleware1[ix].toString() + ' in array');
         }, this));
         each([0, 3], $.proxy(function(_, ix) {
-            equal($.inArray(this.mw.testMiddleware1[ix], mw), -1,
+            equal(inArray(this.mw.testMiddleware1[ix], mwSet), -1,
                   this.mw.testMiddleware1[ix].toString() + ' not in array');
         }, this));
     });
 
-    test('getByName skips inactive when passed false', 6, function() {
+    test('getByNamespace skips inactive when passed false', 6, function() {
         this.mw.testMiddleware1[0].deactivate();
         this.mw.testMiddleware1[3].deactivate();
-        var mw = $.ajaxMiddleware.getByName('testMiddleware1',
+        var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1',
                                                           false);
-        equal(mw.length, 3, 'correct number returned');
+        equal(mwSet.length, 3, 'correct number returned');
         each([1, 2, 4], $.proxy(function(_, ix) {
-            ok($.inArray(this.mw.testMiddleware1[ix], mw) >= 0,
+            ok(inArray(this.mw.testMiddleware1[ix], mwSet) >= 0,
                this.mw.testMiddleware1[ix].toString() + ' in array');
         }, this));
         each([0, 3], $.proxy(function(_, ix) {
-            equal($.inArray(this.mw.testMiddleware1[ix], mw), -1,
+            equal(inArray(this.mw.testMiddleware1[ix], mwSet), -1,
                   this.mw.testMiddleware1[ix].toString() + ' not in array');
         }, this));
     });
 
-    test('getByName includes inactive if requested', 6, function() {
+    test('getByNamespace includes inactive if requested', 6, function() {
         this.mw.testMiddleware1[0].deactivate();
         this.mw.testMiddleware1[3].deactivate();
-        var mw = $.ajaxMiddleware.getByName('testMiddleware1',
+        var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1',
                                                           true);
-        equal(mw.length, 5, 'correct number returned');
+        equal(mwSet.length, 5, 'correct number returned');
         each(this.mw.testMiddleware1, $.proxy(function(_, middleware) {
-            ok($.inArray(middleware, mw) >= 0,
+            ok(inArray(middleware, mwSet) >= 0,
                middleware.toString() + ' in array');
         }, this));
     });
 
-    test('getByName("*") returns all', 11, function() {
-        var mw = $.ajaxMiddleware.getByName('*');
-        equal(mw.length, 10, 'correct number returned');
-        for (var i = 0; i < mw.length; ++i) {
+    test('getByNamespace("*") returns all', 11, function() {
+        var mwSet = $.ajaxMiddleware.getByNamespace('*');
+        equal(mwSet.length, 10, 'correct number returned');
+        for (var i = 0; i < mwSet.length; ++i) {
             ok(
-                $.inArray(mw[i], this.mw.all) >= 0,
-                '' + mw[i] + ' in array.'
+                inArray(mwSet[i], this.mw.all) >= 0,
+                '' + mwSet[i] + ' in array.'
             );
         }
     });
 
     function _deactivateAndReturnTuples(testCase) {
         var tuples = [
-            // [<name>, <index>, <active>]
+            // [<namespace>, <index>, <active>]
             ['testMiddleware1', 0, false],
             ['testMiddleware1', 1, true],
             ['testMiddleware1', 2, true],
@@ -401,66 +403,123 @@ define(
             ['testMiddleware2', 4, false]
         ];
         each(tuples, function(__, tuple) {
-            var name = tuple[0];
+            var namespace = tuple[0];
             var index = tuple[1];
             var active = tuple[2];
             if (!active) {
-                testCase.mw[name][index].deactivate();
+                testCase.mw[namespace][index].deactivate();
             }
         });
         return tuples;
     }
 
-    test('getByName("*") skips inactive by default', 11, function() {
+    test('getByNamespace("*") skips inactive by default', 11, function() {
         var tuples = _deactivateAndReturnTuples(this);
-        var mw = $.ajaxMiddleware.getByName('*');
+        var mwSet = $.ajaxMiddleware.getByNamespace('*');
 
-        equal(mw.length, 5, 'correct number returned');
+        equal(mwSet.length, 5, 'correct number returned');
 
         each(tuples, $.proxy(function(_, tuple) {
-            var name = tuple[0],
+            var namespace = tuple[0],
                 index = tuple[1],
                 active = tuple[2];
             if (active) {
-                ok($.inArray(this.mw[name][index], mw) >= 0,
-                   this.mw[name][index].toString() + ' in array');
+                ok(inArray(this.mw[namespace][index], mwSet) >= 0,
+                   this.mw[namespace][index].toString() + ' in array');
             } else {
-                equal($.inArray(this.mw[name][index], mw), -1,
-                      this.mw[name][index].toString() + ' not in array');
+                equal(inArray(this.mw[namespace][index], mwSet), -1,
+                      this.mw[namespace][index].toString() + ' not in array');
             }
         }, this));
     });
 
-    test('getByName("*") skips inactive when passed false', 11, function() {
+    test('getByNamespace("*") skips inactive when passed false', 11, function() {
         var tuples = _deactivateAndReturnTuples(this);
-        var mw = $.ajaxMiddleware.getByName('*', false);
+        var mwSet = $.ajaxMiddleware.getByNamespace('*', false);
 
-        equal(mw.length, 5, 'correct number returned');
+        equal(mwSet.length, 5, 'correct number returned');
 
         each(tuples, $.proxy(function(_, tuple) {
-            var name = tuple[0],
+            var namespace = tuple[0],
                 index = tuple[1],
                 active = tuple[2];
             if (active) {
-                ok($.inArray(this.mw[name][index], mw) >= 0,
-                   this.mw[name][index].toString() + ' in array');
+                ok(inArray(this.mw[namespace][index], mwSet) >= 0,
+                   this.mw[namespace][index].toString() + ' in array');
             } else {
-                equal($.inArray(this.mw[name][index], mw), -1,
-                      this.mw[name][index].toString() + ' not in array');
+                equal(inArray(this.mw[namespace][index], mwSet), -1,
+                      this.mw[namespace][index].toString() + ' not in array');
             }
         }, this));
     });
 
-    test('getByName("*") includes inactive if requested', 11, function() {
+    test('getByNamespace("*") includes inactive if requested', 11, function() {
         var tuples = _deactivateAndReturnTuples(this);
-        var mw = $.ajaxMiddleware.getByName('*', true);
+        var mwSet = $.ajaxMiddleware.getByNamespace('*', true);
 
-        equal(mw.length, 10, 'correct number returned');
+        equal(mwSet.length, 10, 'correct number returned');
 
         each(this.mw.all, $.proxy(function(_, middleware) {
-            ok($.inArray(middleware, mw) >= 0,
+            ok(inArray(middleware, mwSet) >= 0,
                middleware.toString() + ' in array');
         }, this));
+    });
+
+    test('getByNamespace is case insensitive', 20, function() {
+        var variants = ['mw', 'mW', 'Mw', 'MW'];
+        var mwSet = [];
+        each(variants, function(_, ns) {
+            mwSet.push($.ajaxMiddleware({namespace: ns}));
+        });
+
+        each(variants, function(_, ns) {
+            var gbnSet = $.ajaxMiddleware.getByNamespace(ns);
+            equal(gbnSet.length, 4,
+                  'Right number returned with namespace: ' + ns);
+            each(mwSet, function(_, mw) {
+                ok(inArray(mw, gbnSet) >= 0,
+                   '' + mw + ' returned with namespace: ' + ns);
+            });
+        });
+    });
+
+    /* ====================================================================== */
+    module(JQ_VERSION_PREFIX + 'getByDataType', {
+        setup: _createSandbox,
+        teardown: _destroySandbox
+    });
+
+    test('getByDataType returns correct object', 50, function() {
+        var mwSet = [];
+        var i = 0;
+        while (i++ < 50) {
+            mwSet.push($.ajaxMiddleware({namespace: 'mw' + i}));
+        }
+        each(mwSet, function(_, mw) {
+            strictEqual(mw, $.ajaxMiddleware.getByDataType(mw.dataType),
+                        'correct object returned: ' + mw);
+        });
+    });
+
+    test('getByDataType is case insensitive', 2, function() {
+        var mw = $.ajaxMiddleware({namespace: 'tESt'});
+        strictEqual(
+            mw,
+            $.ajaxMiddleware.getByDataType(mw.dataType.toLowerCase()),
+            'Accepts all lower'
+        );
+        strictEqual(
+            mw,
+            $.ajaxMiddleware.getByDataType(mw.dataType.toUpperCase()),
+            'Accepts all upper'
+        );
+    });
+
+    test('getByDataType gets inactive middleware', 1, function() {
+        var mw = $.ajaxMiddleware();
+        mw.deactivate();
+        strictEqual(mw, $.ajaxMiddleware.getByDataType(mw.dataType),
+                    'Returns deactivated middleware');
     });
 
     /* ====================================================================== */
@@ -469,16 +528,14 @@ define(
         teardown: _destroySandbox
     });
 
-    /* --- actual test cases --- */
     asyncTest('establish that base ajax call works', 2, function() {
         $.ajax(_buildAjaxOptions());
     });
 
     asyncTest('default handlers do not prevent normal call', 2, function() {
-            $.ajaxMiddleware();
-            $.ajax(_buildAjaxOptions());
-        }
-    );
+        $.ajaxMiddleware();
+        $.ajax(_buildAjaxOptions());
+    });
 
     asyncTest('hooks get called', 4, function() {
         $.ajaxMiddleware({

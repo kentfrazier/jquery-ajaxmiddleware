@@ -31,22 +31,22 @@
     /**
      * Currently registered middleware objects.
      *
-     * The key is the name of the middleware, and the value is an array
+     * The key is the namespace of the middleware, and the value is an array
      * of middleware objects registered to that key.
      *
      * @private
-     * @type {Object.<String, ajaxMiddleware[]>}
+     * @type {Object}
      */
     var registry = {
-        ids: {},
-        names: {},
+        dataTypes: {},
+        namespaces: {},
         add: function(middleware) {
-            var id = middleware.id;
-            var name = middleware.name;
+            var namespace = middleware.namespace;
+            var dataType = middleware.dataType;
 
-            this.ids[id] = middleware;
-            this.names[name] = this.names[name] || [];
-            this.names[name].push(middleware);
+            this.dataTypes[dataType] = middleware;
+            this.namespaces[namespace] = this.namespaces[namespace] || [];
+            this.namespaces[namespace].push(middleware);
         }
     };
 
@@ -81,7 +81,7 @@
                 };
             }
 
-            
+
             /* Escape if another middleware is currently processing */
             if (options._ajaxMiddleware.current !== null) {
                 return;
@@ -227,47 +227,59 @@
             ajaxMiddleware.DEFAULT_OPTIONS,
             options
         );
-        this.name = this.options.name;
-        this.id = generateID();
 
         /* For some reason, jQuery lower cases all dataTypes on ajaxPrefilters,
          * but later does not do the same when checking ajaxTransports.
          * To make it work, we need to be consistent with that and always use
          * lower case.
          */
-        this.dataType = (this.name + this.id).toLowerCase();
+        this.namespace = this.options.namespace.toLowerCase();
+        this.dataType = this.namespace + generateID();
 
-        this.activate();
+
+        /* --- Public Methods --- */
+        /**
+         * The internal activation state.
+         * @type {boolean}
+         */
+        var _active = true;
+
+        /**
+         * Activate this middleware class.
+         */
+        this.activate = function activate() {
+            _active = true;
+        };
+
+        /**
+         * Deactivate this middleware class.
+         */
+        this.deactivate = function deactivate() {
+            _active = false;
+        };
+
+        /**
+         * @returns {boolean} whether the middleware is currently active
+         */
+        this.isActive = function isActive() {
+            return _active;
+        };
+
+        // Install this middleware in the registry so we can track it
+        registry.add(this);
+
+
+        /* --- Install the underlying AJAX infrastructure --- */
+
+        // First we need to install a prefilter in order to give the
+        // transport handler a place to hook in
+        $.ajaxPrefilter(this.options.dataTypes, createPrefilter(this));
+
+        // Now we can catch the new dataType we just inserted and call
+        // our hooks
+        $.ajaxTransport(this.dataType, createTransport(this));
     }
 
-
-    /**
-     * Handles the business of installing the middleware.
-     *
-     * @private
-     * @returns {void}
-     */
-    function installMiddleware(middleware) {
-        /* Install this middleware in the registry so we can track it
-         */
-        registry.add(middleware);
-
-        /* First we need to install a prefilter in order to give the
-         * transport handler a place to hook in
-         */
-        $.ajaxPrefilter(
-            middleware.options.dataTypes,
-            createPrefilter(middleware)
-        );
-
-        /* Now we can catch the new dataType we just inserted and call
-         * our hooks
-         */
-        $.ajaxTransport(
-            middleware.dataType,
-            createTransport(middleware)
-        );
-    }
 
     /**
      * The module itself.
@@ -292,40 +304,10 @@
          * ------------------------------------------------------------------ */
 
         /**
-         * Activate this middleware class.
-         */
-        activate: function() {
-            this._active = true;
-            if (!(this.id in registry.ids)) {
-                installMiddleware(this);
-            }
-        },
-
-        /**
-         * Deactivate this middleware class.
-         */
-        deactivate: function() {
-            this._active = false;
-        },
-
-        /**
-         * @returns {boolean} whether the middleware is currently active
-         */
-        isActive: function() {
-            return this._active;
-        },
-
-        /**
          * @returns {String} a simple string representation
          */
         toString: function() {
-            return [
-                '<ajaxMiddleware: ',
-                this.dataType,
-                ', ',
-                this.id,
-                '>'
-            ].join('');
+            return ['<ajaxMiddleware: ', this.dataType, '>'].join('');
         }
 
     };
@@ -347,7 +329,7 @@
              *
              * @type {String}
              */
-            name: 'ajaxMiddleware',
+            namespace: 'jquery-ajaxmiddleware',
 
             /**
              * The dataTypes to be handled.
@@ -405,32 +387,40 @@
         },
 
         /**
-         * @param {String} name
-         *     the name of the middleware type in question, or '*' to return
-         *     all registered middleware.
+         * @param {String} namespace
+         *     the namespace of the middleware type in question, or '*' to
+         *     return all registered middleware.
          * @param {boolean} [includeDeactivated=false]
          *     whether or not to include deactivated middleware in results
          * @returns {ajaxMiddleware[]}
-         *     an array of all middleware registered using that name. If
+         *     an array of all middleware registered using that namespace. If
          *     includeDeactivated is true, it will include the deactivated
          *     middleware as well.
          */
-        getByName: function(name, includeDeactivated) {
-            var results = [];
-            if (name === '*') {
-                for (var mwName in registry.names) {
-                    if (registry.names.hasOwnProperty(mwName)) {
-                        $.merge(results,
-                                this.getByName(mwName, includeDeactivated));
+        getByNamespace: function(namespace, includeDeactivated) {
+            if (namespace === '*') {
+                var results = [];
+                var middleware;
+                for (var dataType in registry.dataTypes) {
+                    if (registry.dataTypes.hasOwnProperty(dataType)) {
+                        middleware = registry.dataTypes[dataType];
+                        if (includeDeactivated || middleware.isActive()) {
+                            results.push(middleware);
+                        }
                     }
                 }
-            } else {
-                $.merge(results, registry.names[name] || []);
-                results = $.grep(results, function(middleware) {
-                    return includeDeactivated || middleware._active;
-                });
+                return results;
             }
-            return results;
+            return $.grep(
+                registry.namespaces[('' + namespace).toLowerCase()] || [],
+                function(middleware) {
+                    return includeDeactivated || middleware.isActive();
+                }
+            );
+        },
+
+        getByDataType: function(dataType) {
+            return registry.dataTypes[('' + dataType).toLowerCase()];
         },
 
         _jQuery: $

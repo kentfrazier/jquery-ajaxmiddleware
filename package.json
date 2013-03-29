@@ -2,7 +2,7 @@
   "name": "jquery-ajaxmiddleware",
   "title": "jQuery AJAX Middleware",
   "description": "A jQuery plugin that provides hooks to modify default ajaxTransport options without having to reimplement them.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "homepage": "https://github.com/kentfrazier/jquery-ajaxmiddleware",
   "author": {
     "name": "Kent Frazier",
