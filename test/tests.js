@@ -44,19 +44,31 @@ define(
     var JQ_VERSION_PREFIX = '[jquery-' + JQ_VERSION + '] ';
 
     /* --- Imported jQuery Utilities --- */
-    var isFunction = jQuery.isFunction;
-    var isArray = jQuery.isArray;
-    var inArray = jQuery.inArray;
-    var globalEval = jQuery.globalEval;
-    var extend = jQuery.extend;
     var each = jQuery.each;
+    var extend = jQuery.extend;
+    var globalEval = jQuery.globalEval;
+    var inArray = jQuery.inArray;
+    var isArray = jQuery.isArray;
+    var isFunction = jQuery.isFunction;
+    var proxy = jQuery.proxy;
 
     /* --- testing utility functions --- */
 
-    // $ should only be used for the current sandboxed jQuery, and should
-    // be set to null in each teardown.
+    /**
+     * Value of window.$ at the beginning of execution for this module.
+     * @const
+     * @type {jQuery|undefined}
+     */
+    var _GLOBAL$ = window.$;
+
+    /**
+     * The current sandboxed jQuery.
+     *
+     * $ should only be used for the current sandboxed jQuery, and should
+     * be set to null in each teardown.
+     * @type {jQuery|null}
+     */
     var $ = null;
-    var _global$ = window.$;
 
     function _createSandbox() {
         var _require = window.require;
@@ -72,7 +84,7 @@ define(
         window.define = _define;
 
         $ = window.$;
-        while (window.$ && window.$ !== _global$) {
+        while (window.$ && window.$ !== _GLOBAL$) {
             window.$.noConflict(true);
         }
     }
@@ -130,12 +142,11 @@ define(
         setup: function() {
             this.define = window.define;
             this.require = window.require;
-            this.global$ = window.$;
             window.define = undefined;
             window.require = undefined;
         },
         teardown: function() {
-            while (window.$ && window.$ !== this.global$) {
+            while (window.$ && window.$ !== _GLOBAL$) {
                 window.$.noConflict(true);
             }
             window.define = this.define;
@@ -236,7 +247,7 @@ define(
         equal($.fn.jquery, JQ_VERSION, '$ is jQuery ' + JQ_VERSION);
         notStrictEqual($, global$, '$ is not original window.$');
         strictEqual(global$, window.$, 'window.$ is still original value');
-        ok($.isFunction($.ajaxMiddleware), 'ajaxMiddleware plugin installed');
+        ok(isFunction($.ajaxMiddleware), 'ajaxMiddleware plugin installed');
         strictEqual($.ajaxMiddleware._jQuery, $,
                     'plugin has reference to correct jQuery');
 
@@ -339,11 +350,11 @@ define(
         this.mw.testMiddleware1[3].deactivate();
         var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1');
         equal(mwSet.length, 3, 'correct number returned');
-        each([1, 2, 4], $.proxy(function(_, ix) {
+        each([1, 2, 4], proxy(function(_, ix) {
             ok(inArray(this.mw.testMiddleware1[ix], mwSet) >= 0,
                this.mw.testMiddleware1[ix].toString() + ' in array');
         }, this));
-        each([0, 3], $.proxy(function(_, ix) {
+        each([0, 3], proxy(function(_, ix) {
             equal(inArray(this.mw.testMiddleware1[ix], mwSet), -1,
                   this.mw.testMiddleware1[ix].toString() + ' not in array');
         }, this));
@@ -355,11 +366,11 @@ define(
         var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1',
                                                           false);
         equal(mwSet.length, 3, 'correct number returned');
-        each([1, 2, 4], $.proxy(function(_, ix) {
+        each([1, 2, 4], proxy(function(_, ix) {
             ok(inArray(this.mw.testMiddleware1[ix], mwSet) >= 0,
                this.mw.testMiddleware1[ix].toString() + ' in array');
         }, this));
-        each([0, 3], $.proxy(function(_, ix) {
+        each([0, 3], proxy(function(_, ix) {
             equal(inArray(this.mw.testMiddleware1[ix], mwSet), -1,
                   this.mw.testMiddleware1[ix].toString() + ' not in array');
         }, this));
@@ -371,7 +382,7 @@ define(
         var mwSet = $.ajaxMiddleware.getByNamespace('testmiddleware1',
                                                           true);
         equal(mwSet.length, 5, 'correct number returned');
-        each(this.mw.testMiddleware1, $.proxy(function(_, middleware) {
+        each(this.mw.testMiddleware1, proxy(function(_, middleware) {
             ok(inArray(middleware, mwSet) >= 0,
                middleware.toString() + ' in array');
         }, this));
@@ -419,7 +430,7 @@ define(
 
         equal(mwSet.length, 5, 'correct number returned');
 
-        each(tuples, $.proxy(function(_, tuple) {
+        each(tuples, proxy(function(_, tuple) {
             var namespace = tuple[0],
                 index = tuple[1],
                 active = tuple[2];
@@ -433,13 +444,13 @@ define(
         }, this));
     });
 
-    test('getByNamespace("*") skips inactive when passed false', 11, function() {
+    test('getByNamespace("*") skips inactive if sent false', 11, function() {
         var tuples = _deactivateAndReturnTuples(this);
         var mwSet = $.ajaxMiddleware.getByNamespace('*', false);
 
         equal(mwSet.length, 5, 'correct number returned');
 
-        each(tuples, $.proxy(function(_, tuple) {
+        each(tuples, proxy(function(_, tuple) {
             var namespace = tuple[0],
                 index = tuple[1],
                 active = tuple[2];
@@ -453,13 +464,13 @@ define(
         }, this));
     });
 
-    test('getByNamespace("*") includes inactive if requested', 11, function() {
+    test('getByNamespace("*") includes inactive if sent true', 11, function() {
         var tuples = _deactivateAndReturnTuples(this);
         var mwSet = $.ajaxMiddleware.getByNamespace('*', true);
 
         equal(mwSet.length, 10, 'correct number returned');
 
-        each(this.mw.all, $.proxy(function(_, middleware) {
+        each(this.mw.all, proxy(function(_, middleware) {
             ok(inArray(middleware, mwSet) >= 0,
                middleware.toString() + ' in array');
         }, this));
@@ -603,26 +614,20 @@ define(
             beforeComplete: _beforeComplete500
         });
 
-        // We need to wait until both calls are done to trigger start()
-        $.when([
+        $.ajax(_buildAjaxOptions({
+            complete: function() {
+                _expectCalled('complete')();
 
-            $.ajax(_buildAjaxOptions({
-                complete: _expectCalled('complete')
-            })),
-
-            $.ajax(_buildAjaxOptions({
-                data: {handle: true},
-                success: _expectNotCalled('success'),
-                error: _expectCalled('error'),
-                statusCode: {
-                    500: _expectCalled('500')
-                },
-                complete: _expectCalled('complete')
-            }))
-
-        ]).then(function() {
-            start();
-        });
+                $.ajax(_buildAjaxOptions({
+                    data: {handle: true},
+                    success: _expectNotCalled('success'),
+                    error: _expectCalled('error'),
+                    statusCode: {
+                        500: _expectCalled('500')
+                    }
+                }));
+            }
+        }));
     });
 
     asyncTest('ensure middleware nests properly (LIFO order)', 2, function() {
